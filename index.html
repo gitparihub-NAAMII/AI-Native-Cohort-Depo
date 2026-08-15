@@ -53,6 +53,13 @@
   .title-block h1{margin:0;font-size:24px;font-weight:700;letter-spacing:-0.01em;}
   .title-block p{margin:4px 0 0;color:var(--charcoal-soft);font-size:13.5px;}
 
+  /* ---- Program switcher (AI Native / AI Foundation / AI Deep) ---- */
+  .program-switch{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px;}
+  .prog-btn{border:1px solid var(--line);background:var(--paper);color:var(--charcoal-soft);
+    font-weight:700;font-size:13.5px;padding:9px 18px;border-radius:22px;cursor:pointer;box-shadow:var(--shadow);}
+  .prog-btn:hover{background:var(--cream);}
+  .prog-btn.active{background:var(--red);color:#fff;border-color:var(--red);}
+
   .tabs{display:flex;gap:4px;background:var(--paper);border:1px solid var(--line);
     border-radius:10px;padding:4px;height:fit-content;box-shadow:var(--shadow);}
   .tab-btn{
@@ -274,6 +281,11 @@
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <div class="wrap">
+  <div class="program-switch" id="programSwitch" role="tablist">
+    <button class="prog-btn active" data-prog="ai_native">AI Native</button>
+    <button class="prog-btn" data-prog="ai_foundation">AI Foundation</button>
+    <button class="prog-btn" data-prog="ai_deep">AI Deep</button>
+  </div>
   <div id="connBanner" style="display:none;background:#FCF3CE;color:#8A6A00;border:1px solid #F0D98A;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:600;margin-bottom:14px;line-height:1.45;"></div>
 
   <header class="top">
@@ -399,7 +411,18 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "391119496671",
   appId:             "1:391119496671:web:449d82144bca36a4c7106a"
 };
-const EVENTS_COLLECTION = 'udaan_events';
+/* Each program has its OWN separate calendar (its own set of dates).
+   AI Native keeps the existing data ('udaan_events'); the other two use
+   their own collections. Switching a program just points the calendar at
+   that program's data — all the same features apply to each. */
+const PROGRAMS = [
+  { key:'ai_native',     label:'AI Native',     collection:'udaan_events' },
+  { key:'ai_foundation', label:'AI Foundation', collection:'udaan_events_ai_foundation' },
+  { key:'ai_deep',       label:'AI Deep',       collection:'udaan_events_ai_deep' }
+];
+let currentProgram = PROGRAMS[0];
+function programCollection(){ return currentProgram.collection; }
+function programStorageKey(){ return STORAGE_KEY + '-' + currentProgram.key; }
 
 let db = null;              // Firestore handle (null until connected)
 let useFirestore = false;  // true once connected to the shared database
@@ -712,7 +735,7 @@ async function loadEvents(){
       // Live updates: whenever ANYONE changes the calendar, this rebuilds
       // the list and redraws, so an admin's edits show up on every other
       // open calendar automatically.
-      eventsUnsub = db.collection(EVENTS_COLLECTION).onSnapshot(
+      eventsUnsub = db.collection(programCollection()).onSnapshot(
         snap=>{
           events = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
           renderAll();
@@ -732,14 +755,14 @@ async function loadEvents(){
   useFirestore = false;
   setConnBanner();
   try{
-    const raw = lsGet(STORAGE_KEY);
+    const raw = lsGet(programStorageKey());
     events = raw ? JSON.parse(raw) : [];
   }catch(e){ events = []; }
 }
 
 /* Offline-mode save (whole list to this device). */
 function saveLocal(){
-  try{ lsSet(STORAGE_KEY, JSON.stringify(events)); }
+  try{ lsSet(programStorageKey(), JSON.stringify(events)); }
   catch(e){ showToast('Could not save. Try again.'); }
 }
 
@@ -747,7 +770,7 @@ function saveLocal(){
    different dates at the same time never overwrite each other. */
 async function persistEvent(ev){
   if(useFirestore){
-    try{ await db.collection(EVENTS_COLLECTION).doc(ev.id).set(ev); }
+    try{ await db.collection(programCollection()).doc(ev.id).set(ev); }
     catch(e){ console.error(e); showToast('Could not save to the shared calendar.'); }
   }else{
     saveLocal();
@@ -757,11 +780,32 @@ async function persistEvent(ev){
 /* Remove ONE event. */
 async function removeEvent(id){
   if(useFirestore){
-    try{ await db.collection(EVENTS_COLLECTION).doc(id).delete(); }
+    try{ await db.collection(programCollection()).doc(id).delete(); }
     catch(e){ console.error(e); showToast('Could not delete from the shared calendar.'); }
   }else{
     saveLocal();
   }
+}
+
+/* Highlight the active program button and set the title. */
+function updateProgramUI(){
+  document.querySelectorAll('.prog-btn').forEach(b=>{
+    b.classList.toggle('active', b.dataset.prog===currentProgram.key);
+  });
+  const h1 = document.querySelector('.title-block h1');
+  if(h1) h1.textContent = currentProgram.label + ' Cohort Calendar';
+}
+
+/* Switch to another program's calendar (its own separate dates). */
+async function switchProgram(key){
+  const p = PROGRAMS.find(x=>x.key===key);
+  if(!p || p.key===currentProgram.key) return;
+  currentProgram = p;
+  events = [];
+  updateProgramUI();
+  renderAll();
+  await loadEvents();   // re-subscribe to the selected program's calendar
+  renderAll();
 }
 
 function showToast(msg){
@@ -810,12 +854,16 @@ function renderCalendar(){
     if(m>11){ m=0; y=currentYear+1; }
     const iso = fmtDate(new Date(y,m,c.day));
     const dayEvents = roleVisibleEvents().filter(e=>e.date===iso).sort((a,b)=>a.status.localeCompare(b.status));
+    // Once a date is booked or reserved, show ONLY that on the calendar
+    // instead of available/proposed/booked all at once.
+    const takenEvents = dayEvents.filter(e=>e.status==='confirmed' || e.status==='booked');
+    const displayEvents = takenEvents.length ? takenEvents : dayEvents;
 
     const div = document.createElement('div');
     div.className = 'day' + (c.other?' otherMonth':'') + (iso===todayStr?' today':'') + (dayEvents.length?' hasEvents':'');
     div.innerHTML = `<div class="daynum">${c.day}</div><div class="add-hint">+</div><div class="bands"></div>`;
     const bandsWrap = div.querySelector('.bands');
-    dayEvents.slice(0,4).forEach(ev=>{
+    displayEvents.slice(0,4).forEach(ev=>{
       const band = document.createElement('div');
       const mine = ownsEvent(ev);
       band.className = 'band ' + ev.status + (mine && !isAdmin() ? ' mine' : '');
@@ -837,16 +885,16 @@ function renderCalendar(){
       });
       bandsWrap.appendChild(band);
     });
-    if(dayEvents.length>4){
+    if(displayEvents.length>4){
       const more = document.createElement('div');
       more.className = 'band cancelled';
       more.style.background = 'var(--charcoal-soft)';
-      more.textContent = `+${dayEvents.length-4} more`;
+      more.textContent = `+${displayEvents.length-4} more`;
       bandsWrap.appendChild(more);
     }
     div.addEventListener('click', ()=>{
       if(dayEvents.length===0){ openModal(iso, null); return; }
-      openDayPanel(iso, dayEvents);
+      openDayPanel(iso, isAdmin() ? dayEvents : displayEvents);
     });
     grid.appendChild(div);
   });
@@ -1082,6 +1130,8 @@ function renderAll(){
 function openDayPanel(dateIso, dayEvents){
   const admin = isAdmin();
   const dateTaken = dayEvents.some(e=>e.status==='booked' || e.status==='confirmed');
+  const alreadyMine = !admin && dayEvents.some(e=>ownsEvent(e));
+  const canPropose = admin || (!dateTaken && !alreadyMine);
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   overlay.id = 'modalOverlay';
@@ -1120,7 +1170,7 @@ function openDayPanel(dateIso, dayEvents){
         <div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-ghost" id="dpCancel">Close</button>
-          ${(admin || !dateTaken) ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : '<span class="lock-note" style="margin:0;align-self:center;">Booked by admin — closed for proposals.</span>'}
+          ${canPropose ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : `<span class="lock-note" style="margin:0;align-self:center;">${dateTaken ? 'Booked by admin — closed for proposals.' : 'You have already proposed this date.'}</span>`}
         </div>
       </div>
     </div>`;
@@ -1151,6 +1201,8 @@ function openModal(dateIso, existingEvent, defaultStatus){
     if(!editingOwn){
       const taken = events.some(e=>e.date===dateIso && (e.status==='booked' || e.status==='confirmed'));
       if(taken){ showToast('This date is booked by the admin and is no longer open for proposals.'); return; }
+      const alreadyMine = events.some(e=>e.date===dateIso && ownsEvent(e));
+      if(alreadyMine){ showToast('You have already proposed this date. Open your entry to edit it instead of adding another.'); return; }
     }
   }
   modalDate = dateIso;
@@ -1301,6 +1353,10 @@ function closeModal(){
 }
 
 /* ---- Tabs & nav ---- */
+document.querySelectorAll('.prog-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ switchProgram(btn.dataset.prog); });
+});
+
 document.querySelectorAll('.tab-btn').forEach(btn=>{
   btn.addEventListener('click', ()=>{
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -1353,6 +1409,7 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
 
 /* ---- Init ---- */
 (async function init(){
+  updateProgramUI();
   await loadRole();
   await loadUser();
   await loadEvents();
