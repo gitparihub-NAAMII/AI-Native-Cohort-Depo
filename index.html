@@ -13,19 +13,22 @@
     --cream:#F7F7F8;
     --paper:#FFFFFF;
     --line:#E3E4E7;
-    --available:#1EA85C;       /* Green  — Available */
+    --available:#1EA85C;       /* Green  - Available */
     --available-bg:#E3F6EC;
     --available-ink:#0E7C41;
-    --proposed:#F4C20D;        /* Yellow — Proposed */
+    --proposed:#F4C20D;        /* Yellow - Proposed */
     --proposed-bg:#FCF3CE;
     --proposed-ink:#8A6A00;
-    --booked:#E23B92;          /* Pink   — Booked (admin only) */
+    --booked:#E23B92;          /* Pink   - Booked (admin only) */
     --booked-bg:#FCE3F0;
     --booked-ink:#B01E6C;
-    --confirmed:#2E64C6;       /* Blue   — Confirmed */
+    --confirmed:#2E64C6;       /* Blue   - Confirmed */
     --confirmed-bg:#E3ECFA;
     --confirmed-ink:#1E4CA0;
-    --cancelled:#db0505;       /* Red    — Cancelled */
+    --reserved:#7A5AF0;        /* Purple - Reserved */
+    --reserved-bg:#ECE7FE;
+    --reserved-ink:#5B3FC4;
+    --cancelled:#db0505;       /* Red    - Cancelled */
     --cancelled-bg:#FCE0E0;
     --cancelled-ink:#B00404;
     --coolgrey:#a1a6b2;        /* Cool Grey */
@@ -34,7 +37,7 @@
   *{box-sizing:border-box;}
   body{
     margin:0;
-    background:var(--cream);
+    background:linear-gradient(180deg,#F2F3F5 0%,#F9F9FA 220px,var(--cream) 100%);
     color:var(--charcoal);
     font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;
   }
@@ -113,6 +116,7 @@
   .band.available{background:var(--available);}
   .band.proposed{background:var(--proposed);color:#4A3A00;}
   .band.booked{background:var(--booked);}
+  .band.reserved{background:var(--reserved);}
   .band.confirmed{background:var(--confirmed);}
   .band.cancelled{background:var(--cancelled);text-decoration:line-through;}
   /* The signed-in proposer's own entries get a dark ring + a small dot marker. */
@@ -146,6 +150,7 @@
   .badge.available{background:var(--available-bg);color:var(--available-ink);}
   .badge.proposed{background:var(--proposed-bg);color:var(--proposed-ink);}
   .badge.booked{background:var(--booked-bg);color:var(--booked-ink);}
+  .badge.reserved{background:var(--reserved-bg);color:var(--reserved-ink);}
   .badge.confirmed{background:var(--confirmed-bg);color:var(--confirmed-ink);}
   .badge.cancelled{background:var(--cancelled-bg);color:var(--cancelled-ink);}
   .icon-btn{border:1px solid var(--line);background:var(--cream);border-radius:7px;width:28px;height:28px;
@@ -186,6 +191,7 @@
   .status-opt.sel-available{border-color:var(--available);background:var(--available-bg);color:var(--available-ink);}
   .status-opt.sel-proposed{border-color:var(--proposed);background:var(--proposed-bg);color:var(--proposed-ink);}
   .status-opt.sel-booked{border-color:var(--booked);background:var(--booked-bg);color:var(--booked-ink);}
+  .status-opt.sel-reserved{border-color:var(--reserved);background:var(--reserved-bg);color:var(--reserved-ink);}
   .status-opt.sel-confirmed{border-color:var(--confirmed);background:var(--confirmed-bg);color:var(--confirmed-ink);}
   .status-opt.sel-cancelled{border-color:var(--cancelled);background:var(--cancelled-bg);color:var(--cancelled-ink);}
   .err{color:var(--red);font-size:12px;margin-top:4px;display:none;}
@@ -258,7 +264,25 @@
   .at-bar{height:10px;border-radius:6px;background:var(--available-bg);overflow:hidden;margin-top:12px;display:flex;}
   .at-bar .seg{height:100%;}
   .at-bar .seg.confirmed{background:var(--confirmed);}
+  .at-bar .seg.reserved{background:var(--reserved);}
   .at-bar .seg.booked{background:var(--booked);}
+
+  /* ---- Notifications for proposers ---- */
+  .notif-banner{background:#E3F6EC;color:var(--available-ink);border:1px solid #BCE7CE;
+    border-radius:12px;padding:14px 16px;margin-bottom:16px;box-shadow:var(--shadow);}
+  .notif-banner .nb-title{font-weight:800;font-size:12px;margin-bottom:8px;
+    text-transform:uppercase;letter-spacing:.05em;}
+  .notif-banner .nb-item{font-size:13px;line-height:1.5;padding:7px 0;border-top:1px solid #CDEBD9;}
+  .notif-banner .nb-item:first-of-type{border-top:none;}
+  .notif-banner .nb-dismiss{margin-top:10px;border:none;background:var(--available);color:#fff;
+    font-weight:700;font-size:12.5px;padding:8px 18px;border-radius:8px;cursor:pointer;}
+  .notif-banner .nb-dismiss:hover{background:var(--available-ink);}
+
+  /* ---- Light polish ---- */
+  .btn,.prog-btn,.tab-btn,.nav-btn,.today-btn,.fab,.icon-btn,.status-opt,.filter-chip{transition:all .15s ease;}
+  .cal-card,.stat,.legend,.avail-tracker{transition:box-shadow .18s ease,transform .18s ease;}
+  .stat:hover{transform:translateY(-1px);box-shadow:0 4px 16px rgba(69,77,89,0.10);}
+  .fab:hover{transform:translateY(-1px);}
   .at-bar .seg.available{background:var(--available);}
   .at-empty{font-size:13px;color:var(--charcoal-soft);}
 
@@ -287,6 +311,7 @@
     <button class="prog-btn" data-prog="ai_deep">AI Deep</button>
   </div>
   <div id="connBanner" style="display:none;background:#FCF3CE;color:#8A6A00;border:1px solid #F0D98A;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:600;margin-bottom:14px;line-height:1.45;"></div>
+  <div id="notifBanner" class="notif-banner" style="display:none;"></div>
 
   <header class="top">
     <div class="title-block">
@@ -302,7 +327,7 @@
         <button class="tab-btn" data-tab="list">Dashboard</button>
       </div>
       <div class="role-box" id="userBox" style="display:none;">
-        <span class="user-chip" id="userChip"><span class="u-dot"></span><span id="userChipName">&mdash;</span></span>
+        <span class="user-chip" id="userChip"><span class="u-dot"></span><span id="userChipName">-</span></span>
         <button class="link-btn" id="signOutBtn">Sign out</button>
       </div>
       <div class="role-box">
@@ -315,8 +340,9 @@
   <div class="legend">
     <div class="legend-item"><span class="dot" style="background:var(--available)"></span>Available (open to run)</div>
     <div class="legend-item"><span class="dot" style="background:var(--proposed)"></span>Proposed (suggested by a partner)</div>
-    <div class="legend-item"><span class="dot" style="background:var(--booked)"></span>Booked (admin only)</div>
-    <div class="legend-item"><span class="dot" style="background:var(--confirmed)"></span>Reserved</div>
+    <div class="legend-item"><span class="dot" style="background:var(--booked)"></span>Booked</div>
+    <div class="legend-item"><span class="dot" style="background:var(--reserved)"></span>Reserved</div>
+    <div class="legend-item"><span class="dot" style="background:var(--confirmed)"></span>Confirmed</div>
     <div class="legend-item"><span class="dot" style="background:var(--cancelled)"></span>Cancelled / removed</div>
   </div>
   <p class="perm-note" id="permNote">Proposers can add, edit and delete their own proposed dates. Only an admin can mark a date available, reserve it, or cancel/remove it.</p>
@@ -345,11 +371,11 @@
       </div>
       <div class="grid7 days" id="daysGrid"></div>
     </div>
-    <p class="shared-note" id="sharedNote">This calendar is shared &mdash; anyone with this artifact can view it and propose dates.</p>
+    <p class="shared-note" id="sharedNote">This calendar is shared - anyone with this artifact can view it and propose dates.</p>
   </div>
 
   <div id="listTab" style="display:none;">
-    <div class="admin-only-banner">Admin dashboard &mdash; institution, proposer and contact details below are private. Handle with care.</div>
+    <div class="admin-only-banner">Admin dashboard - institution, proposer and contact details below are private. Handle with care.</div>
     <div class="stat-row" id="statRow"></div>
     <div class="filter-row" id="filterRow"></div>
     <div class="table-scroll" id="listWrap"><div class="loading">Loading&hellip;</div></div>
@@ -398,7 +424,7 @@ const USER_KEY = 'udaan-user';
    This is what makes the calendar work for EVERYONE at once: when an
    admin marks a date available (or anyone proposes a date), it is saved
    to this shared database and instantly appears on every other person's
-   screen. GitHub Pages on its own cannot do this — it only serves files.
+   screen. GitHub Pages on its own cannot do this - it only serves files.
 
    These values connect the calendar to your Firebase project. If you
    ever create a new project, replace them with the new project's config.
@@ -414,7 +440,7 @@ const FIREBASE_CONFIG = {
 /* Each program has its OWN separate calendar (its own set of dates).
    AI Native keeps the existing data ('udaan_events'); the other two use
    their own collections. Switching a program just points the calendar at
-   that program's data — all the same features apply to each. */
+   that program's data - all the same features apply to each. */
 const PROGRAMS = [
   { key:'ai_native',     label:'AI Native',     collection:'udaan_events' },
   { key:'ai_foundation', label:'AI Foundation', collection:'udaan_events_ai_foundation' },
@@ -447,14 +473,14 @@ function setConnBanner(){
     b.style.display = 'none';
   }else{
     b.style.display = 'block';
-    b.textContent = 'Offline mode — this calendar is not connected to the shared database yet, '
+    b.textContent = 'Offline mode - this calendar is not connected to the shared database yet, '
       + 'so any changes are saved only on this device and are NOT shared with others. '
       + 'Check your Firebase details and Firestore rules to turn on sharing.';
   }
 }
 
 /* =====================================================================
-   ADMIN ACCOUNTS  —  edit this list to add / remove admins or change
+   ADMIN ACCOUNTS  -  edit this list to add / remove admins or change
    passwords. Each admin has their OWN username + password. Usernames are
    matched case-insensitively; passwords are exact.
    NOTE: because this is a shared HTML file, anyone who opens the file can
@@ -478,7 +504,7 @@ let activeFilter = 'all';
 let editingId = null;
 let modalDate = null;
 
-const STATUS_LABEL = {available:'Available', proposed:'Proposed', booked:'Booked', confirmed:'Reserved', cancelled:'Cancelled'};
+const STATUS_LABEL = {available:'Available', proposed:'Proposed', booked:'Booked', reserved:'Reserved', confirmed:'Confirmed', cancelled:'Cancelled'};
 // Statuses a signed-in proposer is allowed to set on their own entries.
 // "Booked", "Available", "Confirmed" and "Cancelled" are ADMIN-ONLY.
 const PROPOSER_STATUSES = ['proposed'];
@@ -508,7 +534,7 @@ function updateRoleUI(){
     label.classList.remove('admin');
     btn.textContent = adminAuthed ? 'Switch to admin dashboard' : 'Admin login';
     listTabBtn.style.display = 'none';
-    permNote.textContent = 'You can propose a date and edit or remove your own proposals any time — they are tagged with your name and a dark ring so you can spot them. You can\u2019t edit other partners\u2019 dates, and booking, reserving, marking a date available, and cancelling are handled by the NAAMII admin team.';
+    permNote.textContent = 'You can propose a date and edit or remove your own proposals any time - they are tagged with your name and a dark ring so you can spot them. You can\u2019t edit other partners\u2019 dates, and booking, reserving, marking a date available, and cancelling are handled by the NAAMII admin team.';
     sharedNote.textContent = 'This calendar is shared. For everyone\u2019s privacy, proposer names and contact details are only visible to admins.';
     if(document.querySelector('.tab-btn[data-tab="list"]').classList.contains('active')){
       document.querySelector('.tab-btn[data-tab="cal"]').click();
@@ -621,6 +647,9 @@ function signOut(){
   role = 'proposer';
   adminName = null;
   adminAuthed = false;
+  notifSeen = null;
+  pendingNotifs = [];
+  const nb = document.getElementById('notifBanner'); if(nb) nb.style.display = 'none';
   lsDel(USER_KEY);
   saveRole();
   updateUserUI();
@@ -702,7 +731,7 @@ document.getElementById('roleSwitchBtn').addEventListener('click', async ()=>{
     renderAll();
     showToast('Now viewing the proposer dashboard.');
   }else if(adminAuthed){
-    // Already logged in this session — switch straight back to admin, no password.
+    // Already logged in this session - switch straight back to admin, no password.
     role = 'admin';
     await saveRole();
     updateRoleUI();
@@ -718,7 +747,7 @@ document.getElementById('signOutBtn').addEventListener('click', signOut);
 function uid(){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
 /* Connect to the shared database and start listening for live changes.
-   In shared mode, we never edit the local list directly — the listener
+   In shared mode, we never edit the local list directly - the listener
    below rebuilds it whenever ANYONE (admin or proposer) makes a change,
    and re-renders the calendar. That is what makes updates appear for
    every open browser, and lets many people use the site at once. */
@@ -802,6 +831,8 @@ async function switchProgram(key){
   if(!p || p.key===currentProgram.key) return;
   currentProgram = p;
   events = [];
+  notifSeen = null;
+  pendingNotifs = [];
   updateProgramUI();
   renderAll();
   await loadEvents();   // re-subscribe to the selected program's calendar
@@ -856,7 +887,7 @@ function renderCalendar(){
     const dayEvents = roleVisibleEvents().filter(e=>e.date===iso).sort((a,b)=>a.status.localeCompare(b.status));
     // Once a date is booked or reserved, show ONLY that on the calendar
     // instead of available/proposed/booked all at once.
-    const takenEvents = dayEvents.filter(e=>e.status==='confirmed' || e.status==='booked');
+    const takenEvents = dayEvents.filter(e=>e.status==='confirmed' || e.status==='reserved' || e.status==='booked');
     const displayEvents = takenEvents.length ? takenEvents : dayEvents;
 
     const div = document.createElement('div');
@@ -881,7 +912,7 @@ function renderCalendar(){
         if(isAdmin()){ openModal(ev.date, ev); return; }
         if(mine){ openModal(ev.date, ev); return; }            // edit your own entry
         if(ev.status==='available'){ openModal(ev.date, null, 'proposed'); }
-        else{ showToast('This date belongs to another partner — only admins can see its details.'); }
+        else{ showToast('This date belongs to another partner - only admins can see its details.'); }
       });
       bandsWrap.appendChild(band);
     });
@@ -901,7 +932,7 @@ function renderCalendar(){
 }
 
 function renderStats(){
-  const counts = {available:0,proposed:0,booked:0,confirmed:0,cancelled:0};
+  const counts = {available:0,proposed:0,booked:0,reserved:0,confirmed:0,cancelled:0};
   events.forEach(e=>{ if(counts[e.status]!==undefined) counts[e.status]++; });
 
   const row = document.getElementById('statRow');
@@ -915,7 +946,7 @@ function renderStats(){
 
   const pubRow = document.getElementById('publicStatRow');
   pubRow.innerHTML = '';
-  ['available','proposed','booked','confirmed'].forEach(k=>{
+  ['available','proposed','booked','reserved','confirmed'].forEach(k=>{
     const div = document.createElement('div');
     div.className = 'stat';
     div.innerHTML = `<div class="n" style="color:var(--${k}-ink)">${counts[k]}</div><div class="l">${STATUS_LABEL[k]} slots</div>`;
@@ -938,15 +969,16 @@ function renderAvailability(){
     if(!byDate[e.date]) byDate[e.date] = {};
     byDate[e.date][e.status] = true;
   });
-  let available=0, confirmed=0, booked=0;
+  let available=0, confirmed=0, reserved=0, booked=0;
   Object.keys(byDate).forEach(d=>{
     const s = byDate[d];
-    if(s.confirmed) confirmed++;        // reserved date (takes priority)
+    if(s.confirmed) confirmed++;        // confirmed date (highest priority)
+    else if(s.reserved) reserved++;     // reserved date
     else if(s.booked) booked++;         // booked date
     else if(s.available) available++;   // still open
   });
-  const filled = confirmed + booked;      // dates taken by admins
-  const total  = available + filled;      // the published slot pool
+  const filled = confirmed + reserved + booked;   // dates taken by admins
+  const total  = available + filled;              // the published slot pool
 
   // No capacity published yet.
   if(total === 0){
@@ -967,15 +999,16 @@ function renderAvailability(){
               stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
       <div>
-        <h3>All slots booked — fully reserved</h3>
+        <h3>All slots booked - fully reserved</h3>
         <p>All ${total} published slot${total===1?'':'s'} are reserved or booked. There are no open dates left.</p>
       </div>
       <span class="fr-badge">FULLY RESERVED</span>`;
     return;
   }
 
-  // Normal state → live count + progress bar.
+  // Normal state - live count + progress bar.
   const pctC = (confirmed/total*100).toFixed(1);
+  const pctR = (reserved/total*100).toFixed(1);
   const pctB = (booked/total*100).toFixed(1);
   const pctA = (available/total*100).toFixed(1);
   box.className = 'avail-tracker';
@@ -985,17 +1018,19 @@ function renderAvailability(){
         <span class="at-num${available===0?' zero':''}">${available}</span>
         <div>
           <div class="at-label">available slot${available===1?'':'s'} remaining</div>
-          <div class="at-sub">${filled} of ${total} slot${total===1?'':'s'} reserved or booked</div>
+          <div class="at-sub">${filled} of ${total} slot${total===1?'':'s'} taken</div>
         </div>
       </div>
       <div class="at-legend">
         <span class="at-chip"><span class="n" style="color:var(--available-ink)">${available}</span> Available</span>
-        <span class="at-chip"><span class="n" style="color:var(--confirmed-ink)">${confirmed}</span> Reserved</span>
         <span class="at-chip"><span class="n" style="color:var(--booked-ink)">${booked}</span> Booked</span>
+        <span class="at-chip"><span class="n" style="color:var(--reserved-ink)">${reserved}</span> Reserved</span>
+        <span class="at-chip"><span class="n" style="color:var(--confirmed-ink)">${confirmed}</span> Confirmed</span>
       </div>
     </div>
     <div class="at-bar" title="${filled} of ${total} slots taken">
       <div class="seg confirmed" style="width:${pctC}%"></div>
+      <div class="seg reserved" style="width:${pctR}%"></div>
       <div class="seg booked" style="width:${pctB}%"></div>
       <div class="seg available" style="width:${pctA}%"></div>
     </div>`;
@@ -1011,7 +1046,7 @@ function renderMyProgress(){
   const mine = events.filter(e=>e.ownerId===profile.userId).sort((a,b)=>a.date.localeCompare(b.date));
   box.style.display = '';
 
-  const mc = {proposed:0,booked:0,confirmed:0,cancelled:0};
+  const mc = {proposed:0,booked:0,reserved:0,confirmed:0,cancelled:0};
   mine.forEach(e=>{ if(mc[e.status]!==undefined) mc[e.status]++; });
 
   const firstName = profile.name.split(' ')[0];
@@ -1022,6 +1057,7 @@ function renderMyProgress(){
     <div class="myprog-stats">
       <div class="mp-stat"><div class="n" style="color:var(--proposed-ink)">${mc.proposed}</div><div class="l">Proposed</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--booked-ink)">${mc.booked}</div><div class="l">Booked by admin</div></div>
+      <div class="mp-stat"><div class="n" style="color:var(--reserved-ink)">${mc.reserved}</div><div class="l">Reserved by admin</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--confirmed-ink)">${mc.confirmed}</div><div class="l">Confirmed by admin</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--cancelled-ink)">${mc.cancelled}</div><div class="l">Cancelled</div></div>
     </div>`;
@@ -1054,7 +1090,7 @@ function renderMyProgress(){
 function renderFilters(){
   const row = document.getElementById('filterRow');
   row.innerHTML = '';
-  const opts = [['all','All dates'],['available','Available'],['proposed','Proposed'],['booked','Booked'],['confirmed','Reserved'],['cancelled','Cancelled']];
+  const opts = [['all','All dates'],['available','Available'],['proposed','Proposed'],['booked','Booked'],['reserved','Reserved'],['confirmed','Confirmed'],['cancelled','Cancelled']];
   opts.forEach(([key,label])=>{
     const chip = document.createElement('div');
     chip.className = 'filter-chip' + (activeFilter===key?' active':'');
@@ -1081,12 +1117,12 @@ function renderList(){
   rows.forEach(ev=>{
     html += `<tr>
       <td>${niceDate(ev.date)}</td>
-      <td>${ev.title ? escapeHtml(ev.title) : '&mdash;'}</td>
-      <td>${ev.location ? escapeHtml(ev.location) : '&mdash;'}</td>
+      <td>${ev.title ? escapeHtml(ev.title) : '-'}</td>
+      <td>${ev.location ? escapeHtml(ev.location) : '-'}</td>
       <td><span class="badge ${ev.status}">${STATUS_LABEL[ev.status]}</span></td>
-      <td>${ev.proposedBy ? escapeHtml(ev.proposedBy) : '&mdash;'}</td>
-      <td>${ev.contact ? escapeHtml(ev.contact) : '&mdash;'}</td>
-      <td>${ev.notes ? escapeHtml(ev.notes) : '&mdash;'}</td>
+      <td>${ev.proposedBy ? escapeHtml(ev.proposedBy) : '-'}</td>
+      <td>${ev.contact ? escapeHtml(ev.contact) : '-'}</td>
+      <td>${ev.notes ? escapeHtml(ev.notes) : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="icon-btn" data-edit="${ev.id}" title="${canEditEvent(ev) ? 'Edit' : 'View'}">${canEditEvent(ev) ? '&#9998;' : '&#128065;'}</button>
         ${canDeleteEvent(ev) ? `<button class="icon-btn" data-del="${ev.id}" title="Delete">&#10005;</button>` : ''}
@@ -1124,12 +1160,84 @@ function renderAll(){
   renderCalendar();
   renderStats();
   renderList();
+  checkNotifications();
+}
+
+/* ---- Proposer notifications ----
+   When an admin decides a proposer's date (booked / reserved / confirmed /
+   cancelled), that proposer is told about their own slot; anyone else who
+   proposed the same date is told it went to another partner and to pick
+   another open date. "Seen" states are remembered per person + program so
+   a message shows once, even if they were away when the change happened. */
+let pendingNotifs = [];
+let notifSeen = null;
+function notifKey(){ return 'udaan-notif-' + currentProgram.key + '-' + (profile ? profile.userId : ''); }
+function loadNotifSeen(){ try{ notifSeen = JSON.parse(lsGet(notifKey()) || '{}'); }catch(e){ notifSeen = {}; } }
+
+function checkNotifications(){
+  const banner = document.getElementById('notifBanner');
+  if(!banner) return;
+  if(!profile || isAdmin()){ banner.style.display = 'none'; return; }
+  if(!notifSeen) loadNotifSeen();
+  const myId = profile.userId;
+  const decided = ['booked','reserved','confirmed','cancelled'];
+  const newMsgs = [];
+
+  // Which dates are taken (and by which status), ignoring cancelled.
+  const takenDates = {};
+  events.forEach(e=>{ if(['booked','reserved','confirmed'].includes(e.status)) takenDates[e.date] = e.status; });
+
+  // (a) My own entries that the admin has decided.
+  events.filter(e=>e.ownerId===myId).forEach(e=>{
+    if(decided.includes(e.status)){
+      const k = 'own:' + e.id;
+      if(notifSeen[k] !== e.status){
+        const w = STATUS_LABEL[e.status].toLowerCase();
+        if(e.status==='cancelled'){
+          newMsgs.push('Your proposal for ' + niceDate(e.date) + ' has been cancelled by the admin.');
+        }else{
+          newMsgs.push('Good news: your slot for ' + niceDate(e.date) + ' has been ' + w + ' by the admin.');
+        }
+        notifSeen[k] = e.status;
+      }
+    }
+  });
+
+  // (b) Dates I proposed that got taken for another partner.
+  events.filter(e=>e.ownerId===myId && e.status==='proposed').forEach(e=>{
+    const t = takenDates[e.date];
+    if(t){
+      const k = 'lost:' + e.id;
+      if(notifSeen[k] !== t){
+        const w = STATUS_LABEL[t].toLowerCase();
+        newMsgs.push('The date ' + niceDate(e.date) + ' you proposed is already ' + w + ' for another partner. Please choose another available date.');
+        notifSeen[k] = t;
+      }
+    }
+  });
+
+  if(newMsgs.length){
+    lsSet(notifKey(), JSON.stringify(notifSeen));
+    newMsgs.forEach(m=>{ if(!pendingNotifs.includes(m)) pendingNotifs.push(m); });
+    renderNotifBanner();
+  }
+}
+
+function renderNotifBanner(){
+  const b = document.getElementById('notifBanner');
+  if(!b) return;
+  if(!pendingNotifs.length){ b.style.display = 'none'; return; }
+  b.style.display = 'block';
+  b.innerHTML = '<div class="nb-title">Updates for you</div>'
+    + pendingNotifs.map(m=>'<div class="nb-item">' + escapeHtml(m) + '</div>').join('')
+    + '<button class="nb-dismiss" id="nbDismiss">Got it</button>';
+  b.querySelector('#nbDismiss').addEventListener('click', ()=>{ pendingNotifs = []; b.style.display = 'none'; });
 }
 
 /* ---- Day panel (when a date already has entries) ---- */
 function openDayPanel(dateIso, dayEvents){
   const admin = isAdmin();
-  const dateTaken = dayEvents.some(e=>e.status==='booked' || e.status==='confirmed');
+  const dateTaken = dayEvents.some(e=>e.status==='booked' || e.status==='reserved' || e.status==='confirmed');
   const alreadyMine = !admin && dayEvents.some(e=>ownsEvent(e));
   const canPropose = admin || (!dateTaken && !alreadyMine);
   const overlay = document.createElement('div');
@@ -1155,7 +1263,7 @@ function openDayPanel(dateIso, dayEvents){
           const actionable = bookable || mine;
           const myFirst = (profile && profile.name ? profile.name.split(' ')[0] : 'You');
           const mainLabel = mine ? (myFirst + ' · ' + STATUS_LABEL[ev.status]) : STATUS_LABEL[ev.status];
-          const subLabel = mine ? 'Your entry — tap to edit'
+          const subLabel = mine ? 'Your entry - tap to edit'
                                 : (bookable ? 'Tap to propose this date' : 'Details visible to admins only');
           return `<div class="day-panel-item${actionable?'':' notBookable'}${mine?' mine':''}" data-id="${ev.id}" data-actionable="${actionable}" data-mine="${mine}" data-bookable="${bookable}" style="${actionable?'':'cursor:default;opacity:.75;'}">
             <div>
@@ -1170,7 +1278,7 @@ function openDayPanel(dateIso, dayEvents){
         <div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-ghost" id="dpCancel">Close</button>
-          ${canPropose ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : `<span class="lock-note" style="margin:0;align-self:center;">${dateTaken ? 'Booked by admin — closed for proposals.' : 'You have already proposed this date.'}</span>`}
+          ${canPropose ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : `<span class="lock-note" style="margin:0;align-self:center;">${dateTaken ? 'Booked by admin - closed for proposals.' : 'You have already proposed this date.'}</span>`}
         </div>
       </div>
     </div>`;
@@ -1186,7 +1294,7 @@ function openDayPanel(dateIso, dayEvents){
       if(admin){ closeModal(); openModal(ev.date, ev); return; }
       if(item.dataset.mine==='true'){ closeModal(); openModal(ev.date, ev); return; }
       if(item.dataset.bookable==='true'){ closeModal(); openModal(ev.date, null, 'proposed'); }
-      else{ showToast('This date belongs to another partner — only admins can see its details.'); }
+      else{ showToast('This date belongs to another partner - only admins can see its details.'); }
     });
   });
 }
@@ -1199,7 +1307,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
   if(!isAdmin()){
     const editingOwn = existingEvent && ownsEvent(existingEvent);
     if(!editingOwn){
-      const taken = events.some(e=>e.date===dateIso && (e.status==='booked' || e.status==='confirmed'));
+      const taken = events.some(e=>e.date===dateIso && (e.status==='booked' || e.status==='reserved' || e.status==='confirmed'));
       if(taken){ showToast('This date is booked by the admin and is no longer open for proposals.'); return; }
       const alreadyMine = events.some(e=>e.date===dateIso && ownsEvent(e));
       if(alreadyMine){ showToast('You have already proposed this date. Open your entry to edit it instead of adding another.'); return; }
@@ -1211,7 +1319,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
   overlay.className = 'overlay';
   overlay.id = 'modalOverlay';
 
-  const statuses = ['available','proposed','booked','confirmed','cancelled'];
+  const statuses = ['available','proposed','booked','reserved','confirmed','cancelled'];
   const currentStatus = existingEvent ? existingEvent.status : (defaultStatus || 'proposed');
   const admin = isAdmin();
   const readOnly = existingEvent ? !canEditEvent(existingEvent) : false;
@@ -1219,7 +1327,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
 
   overlay.innerHTML = `
     <div class="modal">
-      <h3>${readOnly ? 'View date' : (existingEvent ? 'Edit date' : 'Add date')} &mdash; ${niceDate(dateIso)}</h3>
+      <h3>${readOnly ? 'View date' : (existingEvent ? 'Edit date' : 'Add date')} - ${niceDate(dateIso)}</h3>
       ${readOnly ? '<div class="lock-note">This date is set by an admin. Switch to admin view to edit it.</div>' : ''}
       ${(!readOnly && statusLocked) ? '<div class="lock-note">You can set a date as <b>Proposed</b> or <b>Booked</b>. Only an admin can mark a date available, reserve it, or cancel it.</div>' : ''}
       <div class="field">
@@ -1235,6 +1343,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
         <label>Date</label>
         <input type="date" id="fDate" value="${dateIso}" ${readOnly?'disabled':''}>
       </div>
+      ${admin ? '' : `
       <div class="field">
         <label>Institution name</label>
         <input type="text" id="fTitle" placeholder="e.g. Khowpa Engineering College" value="${existingEvent && existingEvent.title ? escapeAttr(existingEvent.title) : ''}" ${readOnly?'disabled':''}>
@@ -1254,8 +1363,9 @@ function openModal(dateIso, existingEvent, defaultStatus){
       <div class="field">
         <label>Notes</label>
         <textarea id="fNotes" placeholder="Any extra detail..." ${readOnly?'disabled':''}>${existingEvent && existingEvent.notes ? existingEvent.notes : ''}</textarea>
-        <div class="err" id="formErr">Please select a status before saving.</div>
-      </div>
+      </div>`}
+      ${admin ? '<div class="lock-note">As admin you are setting the status for this date. Institution and contact details stay as the proposer entered them.</div>' : ''}
+      <div class="err" id="formErr" style="margin-top:2px;">Please select a status before saving.</div>
       <div class="modal-actions">
         <div>${(existingEvent && !readOnly) ? '<button class="btn btn-danger" id="delBtn">Delete</button>' : ''}</div>
         <div style="display:flex;gap:8px;">
@@ -1301,13 +1411,15 @@ function openModal(dateIso, existingEvent, defaultStatus){
   const saveBtn = overlay.querySelector('#saveBtn');
   if(saveBtn){
     saveBtn.addEventListener('click', async ()=>{
-      const dateVal = overlay.querySelector('#fDate').value;
-      const titleVal = overlay.querySelector('#fTitle').value.trim();
-      const locationVal = overlay.querySelector('#fLocation').value.trim();
-      const proposerVal = overlay.querySelector('#fProposer').value.trim();
-      const contactVal = overlay.querySelector('#fContact').value.trim();
-      const notesVal = overlay.querySelector('#fNotes').value.trim();
-      const errEl = overlay.querySelector('#formErr');
+      const q = sel => overlay.querySelector(sel);
+      const dEl=q('#fDate'), tEl=q('#fTitle'), lEl=q('#fLocation'), pEl=q('#fProposer'), cEl=q('#fContact'), nEl=q('#fNotes');
+      const dateVal = dEl ? dEl.value : (existingEvent ? existingEvent.date : dateIso);
+      const titleVal = tEl ? tEl.value.trim() : (existingEvent ? (existingEvent.title||'') : '');
+      const locationVal = lEl ? lEl.value.trim() : (existingEvent ? (existingEvent.location||'') : '');
+      const proposerVal = pEl ? pEl.value.trim() : (existingEvent ? (existingEvent.proposedBy||'') : '');
+      const contactVal = cEl ? cEl.value.trim() : (existingEvent ? (existingEvent.contact||'') : '');
+      const notesVal = nEl ? nEl.value.trim() : (existingEvent ? (existingEvent.notes||'') : '');
+      const errEl = q('#formErr');
 
       if(!dateVal || !selectedStatus){
         errEl.textContent = 'Please choose a date and a status before saving.';
