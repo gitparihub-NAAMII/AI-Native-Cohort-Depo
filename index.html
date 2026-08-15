@@ -270,7 +270,11 @@
 </head>
 <body>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<!-- Firebase (shared, real-time database so admin changes reach everyone) -->
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore-compat.js"></script>
 <div class="wrap">
+  <div id="connBanner" style="display:none;background:#FCF3CE;color:#8A6A00;border:1px solid #F0D98A;border-radius:10px;padding:10px 14px;font-size:12.5px;font-weight:600;margin-bottom:14px;line-height:1.45;"></div>
 
   <header class="top">
     <div class="title-block">
@@ -377,6 +381,58 @@ const ADMIN_AUTHED_KEY = 'udaan-admin-authed';
 const USER_KEY = 'udaan-user';
 
 /* =====================================================================
+   SHARED DATABASE (Firebase Firestore)
+   ---------------------------------------------------------------------
+   This is what makes the calendar work for EVERYONE at once: when an
+   admin marks a date available (or anyone proposes a date), it is saved
+   to this shared database and instantly appears on every other person's
+   screen. GitHub Pages on its own cannot do this — it only serves files.
+
+   TO TURN SHARING ON: paste your own Firebase config values below,
+   replacing every "PASTE_..._HERE". Setup steps are in the notes you
+   were given. Until you do this, the calendar runs in OFFLINE mode:
+   it still works, but changes are saved only on the current device.
+   ===================================================================== */
+const FIREBASE_CONFIG = {
+  apiKey:            "PASTE_apiKey_HERE",
+  authDomain:        "PASTE_authDomain_HERE",
+  projectId:         "PASTE_projectId_HERE",
+  storageBucket:     "PASTE_storageBucket_HERE",
+  messagingSenderId: "PASTE_messagingSenderId_HERE",
+  appId:             "PASTE_appId_HERE"
+};
+const EVENTS_COLLECTION = 'udaan_events';
+
+let db = null;              // Firestore handle (null until connected)
+let useFirestore = false;  // true once connected to the shared database
+let eventsUnsub = null;    // stops the live listener if we ever re-subscribe
+
+/* Small helpers so per-device preferences (who is signed in on THIS
+   device, admin session, etc.) survive a page reload on GitHub Pages. */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k, v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+
+function firebaseConfigured(){
+  return typeof firebase !== 'undefined'
+      && FIREBASE_CONFIG.projectId
+      && !String(FIREBASE_CONFIG.projectId).startsWith('PASTE');
+}
+
+function setConnBanner(){
+  const b = document.getElementById('connBanner');
+  if(!b) return;
+  if(useFirestore){
+    b.style.display = 'none';
+  }else{
+    b.style.display = 'block';
+    b.textContent = 'Offline mode — this calendar is not connected to the shared database yet, '
+      + 'so any changes are saved only on this device and are NOT shared with others. '
+      + 'Add your Firebase details in the file to turn on sharing.';
+  }
+}
+
+/* =====================================================================
    ADMIN ACCOUNTS  —  edit this list to add / remove admins or change
    passwords. Each admin has their OWN username + password. Usernames are
    matched case-insensitively; passwords are exact.
@@ -442,35 +498,25 @@ function updateRoleUI(){
 }
 
 async function loadRole(){
-  try{
-    const res = await window.storage.get(ROLE_KEY, false);
-    role = res && res.value === 'admin' ? 'admin' : 'proposer';
-  }catch(e){
-    role = 'proposer';
-  }
-  try{
-    const au = await window.storage.get(ADMIN_AUTHED_KEY, false);
-    adminAuthed = !!(au && au.value === 'yes');
-  }catch(e){ adminAuthed = false; }
-  try{
-    const nm = await window.storage.get(ADMIN_NAME_KEY, false);
-    adminName = (adminAuthed && nm && nm.value) ? nm.value : null;
-  }catch(e){ adminName = null; }
+  role = lsGet(ROLE_KEY) === 'admin' ? 'admin' : 'proposer';
+  adminAuthed = lsGet(ADMIN_AUTHED_KEY) === 'yes';
+  const nm = lsGet(ADMIN_NAME_KEY);
+  adminName = (adminAuthed && nm) ? nm : null;
   if(role==='admin' && !adminAuthed){ role = 'proposer'; }  // safety: no admin view without auth
   updateRoleUI();
 }
 
 async function saveRole(){
-  try{ await window.storage.set(ROLE_KEY, role, false); }catch(e){}
-  try{ await window.storage.set(ADMIN_NAME_KEY, adminName || '', false); }catch(e){}
-  try{ await window.storage.set(ADMIN_AUTHED_KEY, adminAuthed ? 'yes' : 'no', false); }catch(e){}
+  lsSet(ROLE_KEY, role);
+  lsSet(ADMIN_NAME_KEY, adminName || '');
+  lsSet(ADMIN_AUTHED_KEY, adminAuthed ? 'yes' : 'no');
 }
 
 /* ---- User identity (lightweight sign-in) ---- */
 async function loadUser(){
   try{
-    const res = await window.storage.get(USER_KEY, false);
-    profile = res && res.value ? JSON.parse(res.value) : null;
+    const raw = lsGet(USER_KEY);
+    profile = raw ? JSON.parse(raw) : null;
   }catch(e){
     profile = null;
   }
@@ -478,7 +524,7 @@ async function loadUser(){
 }
 
 async function saveUser(){
-  try{ await window.storage.set(USER_KEY, JSON.stringify(profile), false); }catch(e){}
+  lsSet(USER_KEY, JSON.stringify(profile));
 }
 
 function updateUserUI(){
@@ -496,8 +542,10 @@ function showLoginModal(){
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   overlay.id = 'loginOverlay';
+  const logoSrc = (document.querySelector('.brand-logo')||{}).src || '';
   overlay.innerHTML = `
     <div class="modal login-modal">
+      ${logoSrc ? `<div style="text-align:center;margin-bottom:16px;"><img src="${logoSrc}" alt="NAAMII logo" style="height:42px;width:auto;"></div>` : ''}
       <h3>Sign in to the cohort calendar</h3>
       <p class="intro">Add your details once so the calendar can keep track of the dates you propose,
       and show your progress. Your name and contact are only visible to the NAAMII admin team.</p>
@@ -552,7 +600,7 @@ function signOut(){
   role = 'proposer';
   adminName = null;
   adminAuthed = false;
-  try{ window.storage.delete(USER_KEY, false); }catch(e){}
+  lsDel(USER_KEY);
   saveRole();
   updateUserUI();
   updateRoleUI();
@@ -566,8 +614,10 @@ function showAdminLogin(){
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   overlay.id = 'adminOverlay';
+  const logoSrc = (document.querySelector('.brand-logo')||{}).src || '';
   overlay.innerHTML = `
     <div class="modal login-modal">
+      ${logoSrc ? `<div style="text-align:center;margin-bottom:16px;"><img src="${logoSrc}" alt="NAAMII logo" style="height:42px;width:auto;"></div>` : ''}
       <h3>Admin login</h3>
       <p class="intro">Admins have their own username and password. Booking, confirming, marking
       dates available and cancelling are admin-only actions.</p>
@@ -646,21 +696,70 @@ document.getElementById('signOutBtn').addEventListener('click', signOut);
 
 function uid(){ return 'e' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 
+/* Connect to the shared database and start listening for live changes.
+   In shared mode, we never edit the local list directly — the listener
+   below rebuilds it whenever ANYONE (admin or proposer) makes a change,
+   and re-renders the calendar. That is what makes updates appear for
+   every open browser, and lets many people use the site at once. */
 async function loadEvents(){
+  if(firebaseConfigured()){
+    try{
+      if(!db){
+        firebase.initializeApp(FIREBASE_CONFIG);
+        db = firebase.firestore();
+      }
+      useFirestore = true;
+      setConnBanner();
+      if(eventsUnsub) eventsUnsub();
+      eventsUnsub = db.collection(EVENTS_COLLECTION).onSnapshot(
+        snap=>{
+          events = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
+          renderAll();
+        },
+        err=>{
+          console.error('Shared calendar listen error:', err);
+          showToast('Lost connection to the shared calendar.');
+        }
+      );
+      return;
+    }catch(e){
+      console.error('Could not connect to the shared calendar:', e);
+      useFirestore = false;
+    }
+  }
+  // Offline fallback: this device only.
+  useFirestore = false;
+  setConnBanner();
   try{
-    const res = await window.storage.get(STORAGE_KEY, true);
-    events = res && res.value ? JSON.parse(res.value) : [];
-  }catch(e){
-    events = [];
+    const raw = lsGet(STORAGE_KEY);
+    events = raw ? JSON.parse(raw) : [];
+  }catch(e){ events = []; }
+}
+
+/* Offline-mode save (whole list to this device). */
+function saveLocal(){
+  try{ lsSet(STORAGE_KEY, JSON.stringify(events)); }
+  catch(e){ showToast('Could not save. Try again.'); }
+}
+
+/* Save/replace ONE event. Per-event writes mean two people editing
+   different dates at the same time never overwrite each other. */
+async function persistEvent(ev){
+  if(useFirestore){
+    try{ await db.collection(EVENTS_COLLECTION).doc(ev.id).set(ev); }
+    catch(e){ console.error(e); showToast('Could not save to the shared calendar.'); }
+  }else{
+    saveLocal();
   }
 }
 
-async function saveEvents(){
-  try{
-    const res = await window.storage.set(STORAGE_KEY, JSON.stringify(events), true);
-    if(!res){ showToast('Could not save. Try again.'); }
-  }catch(e){
-    showToast('Could not save. Try again.');
+/* Remove ONE event. */
+async function removeEvent(id){
+  if(useFirestore){
+    try{ await db.collection(EVENTS_COLLECTION).doc(id).delete(); }
+    catch(e){ console.error(e); showToast('Could not delete from the shared calendar.'); }
+  }else{
+    saveLocal();
   }
 }
 
@@ -950,8 +1049,9 @@ function renderList(){
       const ev = events.find(e=>e.id===btn.dataset.del);
       if(ev && !canDeleteEvent(ev)){ showToast('Only an admin can remove this date.'); return; }
       if(!confirm('Delete this entry?')) return;
-      events = events.filter(e=>e.id!==btn.dataset.del);
-      await saveEvents();
+      const delId = btn.dataset.del;
+      events = events.filter(e=>e.id!==delId);
+      await removeEvent(delId);
       renderAll();
       showToast('Entry deleted.');
     });
@@ -1116,8 +1216,9 @@ function openModal(dateIso, existingEvent, defaultStatus){
   if(delBtn){
     delBtn.addEventListener('click', async ()=>{
       if(!confirm('Delete this entry?')) return;
-      events = events.filter(e=>e.id!==editingId);
-      await saveEvents();
+      const delId = editingId;
+      events = events.filter(e=>e.id!==delId);
+      await removeEvent(delId);
       closeModal();
       renderAll();
       showToast('Entry deleted.');
@@ -1146,6 +1247,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
         ? (PROPOSER_STATUSES.includes(selectedStatus) ? selectedStatus : 'proposed')
         : selectedStatus;
 
+      let saved = null;
       if(editingId){
         const ev = events.find(e=>e.id===editingId);
         if(ev){
@@ -1153,16 +1255,18 @@ function openModal(dateIso, existingEvent, defaultStatus){
           ev.location = locationVal; ev.proposedBy = proposerVal;
           ev.contact = contactVal; ev.notes = notesVal;
           ev.updatedAt = new Date().toISOString();
+          saved = ev;
         }
       }else{
-        events.push({
+        saved = {
           id: uid(), date: dateVal, status: finalStatus, title: titleVal,
           location: locationVal, proposedBy: proposerVal, contact: contactVal,
           notes: notesVal, ownerId: profile ? profile.userId : null,
           createdAt: new Date().toISOString()
-        });
+        };
+        events.push(saved);
       }
-      await saveEvents();
+      if(saved) await persistEvent(saved);
       closeModal();
       renderAll();
       showToast('Saved.');
