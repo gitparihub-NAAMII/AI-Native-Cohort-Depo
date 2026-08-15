@@ -388,18 +388,16 @@ const USER_KEY = 'udaan-user';
    to this shared database and instantly appears on every other person's
    screen. GitHub Pages on its own cannot do this — it only serves files.
 
-   TO TURN SHARING ON: paste your own Firebase config values below,
-   replacing every "PASTE_..._HERE". Setup steps are in the notes you
-   were given. Until you do this, the calendar runs in OFFLINE mode:
-   it still works, but changes are saved only on the current device.
+   These values connect the calendar to your Firebase project. If you
+   ever create a new project, replace them with the new project's config.
    ===================================================================== */
 const FIREBASE_CONFIG = {
-  apiKey:            "PASTE_apiKey_HERE",
-  authDomain:        "PASTE_authDomain_HERE",
-  projectId:         "PASTE_projectId_HERE",
-  storageBucket:     "PASTE_storageBucket_HERE",
-  messagingSenderId: "PASTE_messagingSenderId_HERE",
-  appId:             "PASTE_appId_HERE"
+  apiKey:            "AIzaSyAMNX-2uYxPj91hF226buvoSRT4U_NiDo4",
+  authDomain:        "ai-native-cohort-calendar.firebaseapp.com",
+  projectId:         "ai-native-cohort-calendar",
+  storageBucket:     "ai-native-cohort-calendar.firebasestorage.app",
+  messagingSenderId: "391119496671",
+  appId:             "1:391119496671:web:449d82144bca36a4c7106a"
 };
 const EVENTS_COLLECTION = 'udaan_events';
 
@@ -428,7 +426,7 @@ function setConnBanner(){
     b.style.display = 'block';
     b.textContent = 'Offline mode — this calendar is not connected to the shared database yet, '
       + 'so any changes are saved only on this device and are NOT shared with others. '
-      + 'Add your Firebase details in the file to turn on sharing.';
+      + 'Check your Firebase details and Firestore rules to turn on sharing.';
   }
 }
 
@@ -711,6 +709,9 @@ async function loadEvents(){
       useFirestore = true;
       setConnBanner();
       if(eventsUnsub) eventsUnsub();
+      // Live updates: whenever ANYONE changes the calendar, this rebuilds
+      // the list and redraws, so an admin's edits show up on every other
+      // open calendar automatically.
       eventsUnsub = db.collection(EVENTS_COLLECTION).onSnapshot(
         snap=>{
           events = snap.docs.map(d=>Object.assign({ id: d.id }, d.data()));
