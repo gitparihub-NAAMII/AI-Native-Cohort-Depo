@@ -31,6 +31,9 @@
     --cancelled:#db0505;       /* Red    - Cancelled */
     --cancelled-bg:#FCE0E0;
     --cancelled-ink:#B00404;
+    --completed:#127A45;       /* Deep Green - Completed (cohort done) */
+    --completed-bg:#D7EFDF;
+    --completed-ink:#0B5B31;
     --coolgrey:#a1a6b2;        /* Cool Grey */
     --shadow:0 1px 2px rgba(69,77,89,0.06),0 4px 14px rgba(69,77,89,0.06);
   }
@@ -119,6 +122,8 @@
   .band.reserved{background:var(--reserved);}
   .band.confirmed{background:var(--confirmed);}
   .band.cancelled{background:var(--cancelled);text-decoration:line-through;}
+  .band.completed{background:var(--completed);}
+  .band.completed::after{content:"\2713";margin-left:4px;font-weight:700;flex:none;}
   /* The signed-in proposer's own entries get a dark ring + a small dot marker. */
   .band.mine{box-shadow:inset 0 0 0 2px var(--charcoal);}
   .band.mine::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--charcoal);
@@ -153,6 +158,7 @@
   .badge.reserved{background:var(--reserved-bg);color:var(--reserved-ink);}
   .badge.confirmed{background:var(--confirmed-bg);color:var(--confirmed-ink);}
   .badge.cancelled{background:var(--cancelled-bg);color:var(--cancelled-ink);}
+  .badge.completed{background:var(--completed-bg);color:var(--completed-ink);}
   .icon-btn{border:1px solid var(--line);background:var(--cream);border-radius:7px;width:28px;height:28px;
     cursor:pointer;font-size:13px;margin-right:4px;color:var(--charcoal-soft);}
   .icon-btn:hover{background:var(--line);}
@@ -194,6 +200,7 @@
   .status-opt.sel-reserved{border-color:var(--reserved);background:var(--reserved-bg);color:var(--reserved-ink);}
   .status-opt.sel-confirmed{border-color:var(--confirmed);background:var(--confirmed-bg);color:var(--confirmed-ink);}
   .status-opt.sel-cancelled{border-color:var(--cancelled);background:var(--cancelled-bg);color:var(--cancelled-ink);}
+  .status-opt.sel-completed{border-color:var(--completed);background:var(--completed-bg);color:var(--completed-ink);}
   .err{color:var(--red);font-size:12px;margin-top:4px;display:none;}
   .modal-actions{display:flex;justify-content:space-between;margin-top:18px;gap:8px;}
   .btn{border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer;}
@@ -220,6 +227,22 @@
   .status-opt.locked{opacity:.45;cursor:not-allowed;}
   .admin-only-banner{background:var(--red-soft);color:var(--red);border:1px solid #F3C4CA;
     border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:600;margin-bottom:14px;}
+  /* Past dates are closed to proposers - dim them slightly. */
+  .day.pastDay:not(.hasEvents){background:#F4F4F6;}
+  .day.pastDay .daynum{color:var(--coolgrey);}
+  /* Audit trail (who changed what) - admin views only. */
+  .audit-box{background:var(--cream);border:1px solid var(--line);border-radius:9px;
+    padding:10px 12px;margin-bottom:13px;text-align:left;}
+  .audit-box .audit-title{font-weight:800;text-transform:uppercase;letter-spacing:.04em;
+    font-size:11px;color:var(--charcoal-soft);margin-bottom:7px;}
+  .audit-row{display:flex;gap:8px;align-items:baseline;font-size:12px;padding:4px 0;
+    border-top:1px dashed var(--line);}
+  .audit-row:first-of-type{border-top:none;}
+  .audit-row .a-who{color:var(--charcoal);font-weight:600;}
+  .audit-row .a-when{color:var(--charcoal-soft);margin-left:auto;white-space:nowrap;}
+  .audit-cell-sub{font-size:11px;color:var(--charcoal-soft);margin-top:1px;}
+  .completed-note{display:inline-block;background:var(--completed-bg);color:var(--completed-ink);
+    border:1px solid #B8E0C8;border-radius:7px;padding:5px 9px;font-size:12px;font-weight:700;margin-bottom:12px;}
 
   /* ---- Identity / login ---- */
   .user-chip{font-size:11.5px;font-weight:700;color:var(--charcoal);background:var(--paper);
@@ -266,6 +289,7 @@
   .at-bar .seg.confirmed{background:var(--confirmed);}
   .at-bar .seg.reserved{background:var(--reserved);}
   .at-bar .seg.booked{background:var(--booked);}
+  .at-bar .seg.completed{background:var(--completed);}
 
   /* ---- Notifications for proposers ---- */
   .notif-banner{background:#E3F6EC;color:var(--available-ink);border:1px solid #BCE7CE;
@@ -297,6 +321,56 @@
     padding:6px 12px;border-radius:20px;letter-spacing:.03em;white-space:nowrap;}
   .fully-reserved .fr-blob{position:absolute;right:-30px;top:-40px;width:150px;height:150px;border-radius:50%;
     background:rgba(255,255,255,0.05);}
+
+  /* People-trained tracker (admin dashboard) */
+  .trained-card{background:linear-gradient(135deg,var(--charcoal) 0%,#3a414c 100%);color:#fff;
+    border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px;
+    position:relative;overflow:hidden;}
+  .trained-card .tc-blob{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;
+    background:rgba(30,168,92,0.16);}
+  .trained-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;z-index:1;}
+  .trained-head svg{width:30px;height:30px;flex:none;}
+  .trained-head h3{margin:0;font-size:15px;font-weight:700;letter-spacing:.01em;}
+  .trained-head .sub{font-size:12px;color:#D7DAE0;margin-top:2px;}
+  .trained-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;
+    position:relative;z-index:1;}
+  .tc-stat{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);
+    border-radius:11px;padding:12px 14px;}
+  .tc-stat .n{font-size:26px;font-weight:800;line-height:1;}
+  .tc-stat .n.hi{color:#8FE9B8;}
+  .tc-stat .l{font-size:11px;color:#D7DAE0;font-weight:600;margin-top:5px;}
+  /* Distinct, on-brand colour per dashboard stat (green = done, gold = cohorts
+     completed, blue = upcoming, lavender = pipeline) - lightened to read on
+     the dark card. */
+  .tc-stat.tc-trained {background:rgba(143,233,184,0.15);border-color:rgba(143,233,184,0.32);border-left:3px solid #8FE9B8;}
+  .tc-stat.tc-completed{background:rgba(246,210,107,0.15);border-color:rgba(246,210,107,0.32);border-left:3px solid #F6D26B;}
+  .tc-stat.tc-upcoming {background:rgba(157,190,242,0.16);border-color:rgba(157,190,242,0.32);border-left:3px solid #9DBEF2;}
+  .tc-stat.tc-pipeline {background:rgba(199,182,251,0.16);border-color:rgba(199,182,251,0.32);border-left:3px solid #C7B6FB;}
+  .tc-stat.tc-trained  .n{color:#8FE9B8;}
+  .tc-stat.tc-completed .n{color:#F6D26B;}
+  .tc-stat.tc-upcoming  .n{color:#9DBEF2;}
+  .tc-stat.tc-pipeline  .n{color:#C7B6FB;}
+
+  /* Footnote */
+  .made-by{text-align:center;font-size:12px;color:var(--charcoal-soft);margin:34px 0 4px;font-weight:600;}
+  .made-by .heart{color:var(--red);}
+
+  /* Location autocomplete (worldwide, Google-Maps-style) */
+  .loc-field{position:relative;}
+  .loc-suggest{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:60;
+    background:var(--paper);border:1px solid var(--line);border-radius:10px;
+    box-shadow:0 12px 34px rgba(69,77,89,0.20);max-height:240px;overflow:auto;display:none;}
+  .loc-suggest.show{display:block;}
+  .loc-opt{padding:9px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--line);
+    display:flex;gap:8px;align-items:flex-start;color:var(--charcoal);}
+  .loc-opt:last-child{border-bottom:none;}
+  .loc-opt:hover,.loc-opt.active{background:var(--cream);}
+  .loc-opt .pin{color:var(--red);flex:none;margin-top:1px;font-size:13px;}
+  .loc-opt .lo-main{font-weight:600;}
+  .loc-opt .lo-sub{color:var(--charcoal-soft);font-size:11.5px;margin-top:1px;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}
+  .loc-status{padding:9px 12px;font-size:12px;color:var(--charcoal-soft);}
+  .loc-status .powered{color:var(--coolgrey);font-size:11px;}
 </style>
 </head>
 <body>
@@ -343,6 +417,7 @@
     <div class="legend-item"><span class="dot" style="background:var(--booked)"></span>Booked</div>
     <div class="legend-item"><span class="dot" style="background:var(--reserved)"></span>Reserved</div>
     <div class="legend-item"><span class="dot" style="background:var(--confirmed)"></span>Confirmed</div>
+    <div class="legend-item"><span class="dot" style="background:var(--completed)"></span>Completed</div>
     <div class="legend-item"><span class="dot" style="background:var(--cancelled)"></span>Cancelled / removed</div>
   </div>
   <p class="perm-note" id="permNote">Proposers can add, edit and delete their own proposed dates. Only an admin can mark a date available, reserve it, or cancel/remove it.</p>
@@ -376,12 +451,15 @@
 
   <div id="listTab" style="display:none;">
     <div class="admin-only-banner">Admin dashboard - institution, proposer and contact details below are private. Handle with care.</div>
+    <div id="trainedTracker"></div>
     <div class="stat-row" id="statRow"></div>
     <div class="filter-row" id="filterRow"></div>
     <div class="table-scroll" id="listWrap"><div class="loading">Loading&hellip;</div></div>
     <button class="btn btn-ghost" id="exportBtn" style="margin-top:14px;">Export to Excel (.xlsx)</button>
     <p class="shared-note">Download the full record, then save or drag it into your OneDrive folder to keep it synced there. This artifact can't write to OneDrive directly, so exporting is a manual (but one-click) step.</p>
   </div>
+
+  <p class="made-by">Made with <span class="heart">&#10084;</span> by Pari</p>
 
   <button class="fab" id="addBtn">+ Propose a date</button>
 </div>
@@ -504,7 +582,7 @@ let activeFilter = 'all';
 let editingId = null;
 let modalDate = null;
 
-const STATUS_LABEL = {available:'Available', proposed:'Proposed', booked:'Booked', reserved:'Reserved', confirmed:'Confirmed', cancelled:'Cancelled'};
+const STATUS_LABEL = {available:'Available', proposed:'Proposed', booked:'Booked', reserved:'Reserved', confirmed:'Confirmed', completed:'Completed', cancelled:'Cancelled'};
 // Statuses a signed-in proposer is allowed to set on their own entries.
 // "Booked", "Available", "Confirmed" and "Cancelled" are ADMIN-ONLY.
 const PROPOSER_STATUSES = ['proposed'];
@@ -527,7 +605,7 @@ function updateRoleUI(){
     label.classList.add('admin');
     btn.textContent = 'Switch to proposer view';
     listTabBtn.style.display = '';
-    permNote.textContent = 'As admin, you can see every detail, mark dates available, set them as booked, reserve them, or cancel/remove dates.';
+    permNote.textContent = 'As admin, you can see every detail, mark dates available, set them as booked, reserved, confirmed or completed, cancel/remove dates, and change past dates. Marking a cohort completed updates the people-trained totals automatically.';
     sharedNote.textContent = 'This calendar is shared. Proposer names and contact details are only visible to admins.';
   }else{
     label.textContent = 'Viewing as: Proposer';
@@ -854,6 +932,17 @@ function niceDate(iso){
   const [y,m,d] = iso.split('-').map(Number);
   return new Date(y,m-1,d).toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric',year:'numeric'});
 }
+/* True when an ISO date (YYYY-MM-DD) is before today. String compare is
+   safe for this fixed format. Used to lock past dates for proposers. */
+function isPastDate(iso){ return iso < fmtDate(new Date()); }
+/* Short, friendly stamp for audit lines from an ISO timestamp. */
+function fmtStamp(isoTs){
+  if(!isoTs) return '';
+  const dt = new Date(isoTs);
+  if(isNaN(dt.getTime())) return '';
+  return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+       + ', ' + dt.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit'});
+}
 
 function renderCalendar(){
   document.getElementById('monthLabel').textContent =
@@ -887,11 +976,12 @@ function renderCalendar(){
     const dayEvents = roleVisibleEvents().filter(e=>e.date===iso).sort((a,b)=>a.status.localeCompare(b.status));
     // Once a date is booked or reserved, show ONLY that on the calendar
     // instead of available/proposed/booked all at once.
-    const takenEvents = dayEvents.filter(e=>e.status==='confirmed' || e.status==='reserved' || e.status==='booked');
+    const takenEvents = dayEvents.filter(e=>e.status==='completed' || e.status==='confirmed' || e.status==='reserved' || e.status==='booked');
     const displayEvents = takenEvents.length ? takenEvents : dayEvents;
+    const pastCell = isPastDate(iso);
 
     const div = document.createElement('div');
-    div.className = 'day' + (c.other?' otherMonth':'') + (iso===todayStr?' today':'') + (dayEvents.length?' hasEvents':'');
+    div.className = 'day' + (c.other?' otherMonth':'') + (iso===todayStr?' today':'') + (dayEvents.length?' hasEvents':'') + (pastCell && !isAdmin() ?' pastDay':'');
     div.innerHTML = `<div class="daynum">${c.day}</div><div class="add-hint">+</div><div class="bands"></div>`;
     const bandsWrap = div.querySelector('.bands');
     displayEvents.slice(0,4).forEach(ev=>{
@@ -907,6 +997,7 @@ function renderCalendar(){
       }else{
         band.textContent = STATUS_LABEL[ev.status];
       }
+      if(ev.status==='completed'){ band.title = 'Completed cohort - ' + niceDate(ev.date); }
       band.addEventListener('click', (e)=>{
         e.stopPropagation();
         if(isAdmin()){ openModal(ev.date, ev); return; }
@@ -932,7 +1023,7 @@ function renderCalendar(){
 }
 
 function renderStats(){
-  const counts = {available:0,proposed:0,booked:0,reserved:0,confirmed:0,cancelled:0};
+  const counts = {available:0,proposed:0,booked:0,reserved:0,confirmed:0,completed:0,cancelled:0};
   events.forEach(e=>{ if(counts[e.status]!==undefined) counts[e.status]++; });
 
   const row = document.getElementById('statRow');
@@ -946,7 +1037,7 @@ function renderStats(){
 
   const pubRow = document.getElementById('publicStatRow');
   pubRow.innerHTML = '';
-  ['available','proposed','booked','reserved','confirmed'].forEach(k=>{
+  ['available','proposed','booked','reserved','confirmed','completed'].forEach(k=>{
     const div = document.createElement('div');
     div.className = 'stat';
     div.innerHTML = `<div class="n" style="color:var(--${k}-ink)">${counts[k]}</div><div class="l">${STATUS_LABEL[k]} slots</div>`;
@@ -955,6 +1046,46 @@ function renderStats(){
 
   renderAvailability();
   renderMyProgress();
+  renderTrained();
+}
+
+/* ---- People trained tracker (admin dashboard) ----
+   Counts the participants a cohort will train once the admin has confirmed
+   it. "Confirmed" is treated as a completed cohort, so this total grows as
+   each cohort is confirmed. Reserved/booked cohorts are shown separately as
+   an upcoming (pipeline) figure so admins can see what is still to come. */
+function renderTrained(){
+  const box = document.getElementById('trainedTracker');
+  if(!box) return;
+
+  let trained = 0, completedCohorts = 0;   // completed = cohort delivered
+  let upcoming = 0, upcomingCohorts = 0;   // confirmed / reserved / booked = pipeline
+  events.forEach(e=>{
+    const n = participantsNum(e);
+    if(e.status==='completed'){ trained += n; completedCohorts++; }
+    else if(e.status==='confirmed' || e.status==='reserved' || e.status==='booked'){ upcoming += n; upcomingCohorts++; }
+  });
+
+  box.innerHTML = `<div class="trained-card">
+    <span class="tc-blob"></span>
+    <div class="trained-head">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3 L2 8 L12 13 L22 8 Z" stroke="#8FE9B8" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M6 10.5 V15 C6 15 8.5 17 12 17 C15.5 17 18 15 18 15 V10.5" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M22 8 V13" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <div>
+        <h3>People trained through ${escapeHtml(currentProgram.label)}</h3>
+        <div class="sub">Totals update automatically when a cohort is marked completed.</div>
+      </div>
+    </div>
+    <div class="trained-grid">
+      <div class="tc-stat tc-trained"><div class="n hi">${trained}</div><div class="l">People trained (completed cohorts)</div></div>
+      <div class="tc-stat tc-completed"><div class="n">${completedCohorts}</div><div class="l">Cohorts completed</div></div>
+      <div class="tc-stat tc-upcoming"><div class="n">${upcoming}</div><div class="l">Participants upcoming (confirmed / reserved / booked)</div></div>
+      <div class="tc-stat tc-pipeline"><div class="n">${upcomingCohorts}</div><div class="l">Cohorts in the pipeline</div></div>
+    </div>
+  </div>`;
 }
 
 /* ---- Availability tracker (auto-updates on every change) ---- */
@@ -969,16 +1100,17 @@ function renderAvailability(){
     if(!byDate[e.date]) byDate[e.date] = {};
     byDate[e.date][e.status] = true;
   });
-  let available=0, confirmed=0, reserved=0, booked=0;
+  let available=0, completed=0, confirmed=0, reserved=0, booked=0;
   Object.keys(byDate).forEach(d=>{
     const s = byDate[d];
-    if(s.confirmed) confirmed++;        // confirmed date (highest priority)
+    if(s.completed) completed++;        // completed date (highest priority)
+    else if(s.confirmed) confirmed++;   // confirmed date
     else if(s.reserved) reserved++;     // reserved date
     else if(s.booked) booked++;         // booked date
     else if(s.available) available++;   // still open
   });
-  const filled = confirmed + reserved + booked;   // dates taken by admins
-  const total  = available + filled;              // the published slot pool
+  const filled = completed + confirmed + reserved + booked;   // dates taken by admins
+  const total  = available + filled;                          // the published slot pool
 
   // No capacity published yet.
   if(total === 0){
@@ -1007,6 +1139,7 @@ function renderAvailability(){
   }
 
   // Normal state - live count + progress bar.
+  const pctDone = (completed/total*100).toFixed(1);
   const pctC = (confirmed/total*100).toFixed(1);
   const pctR = (reserved/total*100).toFixed(1);
   const pctB = (booked/total*100).toFixed(1);
@@ -1026,9 +1159,11 @@ function renderAvailability(){
         <span class="at-chip"><span class="n" style="color:var(--booked-ink)">${booked}</span> Booked</span>
         <span class="at-chip"><span class="n" style="color:var(--reserved-ink)">${reserved}</span> Reserved</span>
         <span class="at-chip"><span class="n" style="color:var(--confirmed-ink)">${confirmed}</span> Confirmed</span>
+        <span class="at-chip"><span class="n" style="color:var(--completed-ink)">${completed}</span> Completed</span>
       </div>
     </div>
     <div class="at-bar" title="${filled} of ${total} slots taken">
+      <div class="seg completed" style="width:${pctDone}%"></div>
       <div class="seg confirmed" style="width:${pctC}%"></div>
       <div class="seg reserved" style="width:${pctR}%"></div>
       <div class="seg booked" style="width:${pctB}%"></div>
@@ -1046,7 +1181,7 @@ function renderMyProgress(){
   const mine = events.filter(e=>e.ownerId===profile.userId).sort((a,b)=>a.date.localeCompare(b.date));
   box.style.display = '';
 
-  const mc = {proposed:0,booked:0,reserved:0,confirmed:0,cancelled:0};
+  const mc = {proposed:0,booked:0,reserved:0,confirmed:0,completed:0,cancelled:0};
   mine.forEach(e=>{ if(mc[e.status]!==undefined) mc[e.status]++; });
 
   const firstName = profile.name.split(' ')[0];
@@ -1059,6 +1194,7 @@ function renderMyProgress(){
       <div class="mp-stat"><div class="n" style="color:var(--booked-ink)">${mc.booked}</div><div class="l">Booked by admin</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--reserved-ink)">${mc.reserved}</div><div class="l">Reserved by admin</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--confirmed-ink)">${mc.confirmed}</div><div class="l">Confirmed by admin</div></div>
+      <div class="mp-stat"><div class="n" style="color:var(--completed-ink)">${mc.completed}</div><div class="l">Completed</div></div>
       <div class="mp-stat"><div class="n" style="color:var(--cancelled-ink)">${mc.cancelled}</div><div class="l">Cancelled</div></div>
     </div>`;
 
@@ -1090,7 +1226,7 @@ function renderMyProgress(){
 function renderFilters(){
   const row = document.getElementById('filterRow');
   row.innerHTML = '';
-  const opts = [['all','All dates'],['available','Available'],['proposed','Proposed'],['booked','Booked'],['reserved','Reserved'],['confirmed','Confirmed'],['cancelled','Cancelled']];
+  const opts = [['all','All dates'],['available','Available'],['proposed','Proposed'],['booked','Booked'],['reserved','Reserved'],['confirmed','Confirmed'],['completed','Completed'],['cancelled','Cancelled']];
   opts.forEach(([key,label])=>{
     const chip = document.createElement('div');
     chip.className = 'filter-chip' + (activeFilter===key?' active':'');
@@ -1112,7 +1248,7 @@ function renderList(){
   }
 
   let html = `<table class="list"><thead><tr>
-    <th>Date</th><th>Institution</th><th>Location</th><th>Status</th><th>Proposed by</th><th>Contact</th><th>Notes</th><th></th>
+    <th>Date</th><th>Institution</th><th>Location</th><th>Status</th><th>Participants</th><th>Proposed by</th><th>Contact</th><th>Notes</th><th>Updated by</th><th></th>
   </tr></thead><tbody>`;
   rows.forEach(ev=>{
     html += `<tr>
@@ -1120,9 +1256,17 @@ function renderList(){
       <td>${ev.title ? escapeHtml(ev.title) : '-'}</td>
       <td>${ev.location ? escapeHtml(ev.location) : '-'}</td>
       <td><span class="badge ${ev.status}">${STATUS_LABEL[ev.status]}</span></td>
+      <td>${participantsNum(ev) ? participantsNum(ev) : '-'}</td>
       <td>${ev.proposedBy ? escapeHtml(ev.proposedBy) : '-'}</td>
       <td>${ev.contact ? escapeHtml(ev.contact) : '-'}</td>
       <td>${ev.notes ? escapeHtml(ev.notes) : '-'}</td>
+      <td>${ev.lastActionBy
+            ? escapeHtml(ev.lastActionBy)
+              + '<div class="audit-cell-sub">'
+              + (ev.lastActionStatus ? escapeHtml(STATUS_LABEL[ev.lastActionStatus] || ev.lastActionStatus) : '')
+              + (ev.lastActionAt ? ' &middot; ' + escapeHtml(fmtStamp(ev.lastActionAt)) : '')
+              + '</div>'
+            : '-'}</td>
       <td style="white-space:nowrap;">
         <button class="icon-btn" data-edit="${ev.id}" title="${canEditEvent(ev) ? 'Edit' : 'View'}">${canEditEvent(ev) ? '&#9998;' : '&#128065;'}</button>
         ${canDeleteEvent(ev) ? `<button class="icon-btn" data-del="${ev.id}" title="Delete">&#10005;</button>` : ''}
@@ -1237,9 +1381,10 @@ function renderNotifBanner(){
 /* ---- Day panel (when a date already has entries) ---- */
 function openDayPanel(dateIso, dayEvents){
   const admin = isAdmin();
-  const dateTaken = dayEvents.some(e=>e.status==='booked' || e.status==='reserved' || e.status==='confirmed');
+  const dateTaken = dayEvents.some(e=>e.status==='booked' || e.status==='reserved' || e.status==='confirmed' || e.status==='completed');
   const alreadyMine = !admin && dayEvents.some(e=>ownsEvent(e));
-  const canPropose = admin || (!dateTaken && !alreadyMine);
+  const datePast = isPastDate(dateIso);
+  const canPropose = admin || (!dateTaken && !alreadyMine && !datePast);
   const overlay = document.createElement('div');
   overlay.className = 'overlay';
   overlay.id = 'modalOverlay';
@@ -1253,12 +1398,12 @@ function openDayPanel(dateIso, dayEvents){
             return `<div class="day-panel-item" data-id="${ev.id}">
               <div>
                 <div class="dpi-main">${ev.title ? escapeHtml(ev.title) : '(No institution name)'}</div>
-                <div class="dpi-sub">${ev.location ? escapeHtml(ev.location) + ' &middot; ' : ''}${STATUS_LABEL[ev.status]}</div>
+                <div class="dpi-sub">${ev.location ? escapeHtml(ev.location) + ' &middot; ' : ''}${STATUS_LABEL[ev.status]}${participantsNum(ev) ? ' &middot; ' + participantsNum(ev) + ' participants' : ''}</div>
               </div>
               <span class="badge ${ev.status}">${STATUS_LABEL[ev.status]}</span>
             </div>`;
           }
-          const bookable = ev.status==='available';
+          const bookable = ev.status==='available' && (admin || !datePast);
           const mine = ownsEvent(ev);
           const actionable = bookable || mine;
           const myFirst = (profile && profile.name ? profile.name.split(' ')[0] : 'You');
@@ -1278,7 +1423,7 @@ function openDayPanel(dateIso, dayEvents){
         <div></div>
         <div style="display:flex;gap:8px;">
           <button class="btn btn-ghost" id="dpCancel">Close</button>
-          ${canPropose ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : `<span class="lock-note" style="margin:0;align-self:center;">${dateTaken ? 'Booked by admin - closed for proposals.' : 'You have already proposed this date.'}</span>`}
+          ${canPropose ? `<button class="btn btn-primary" id="dpAdd">${admin ? 'Add another date here' : 'Propose a date here'}</button>` : `<span class="lock-note" style="margin:0;align-self:center;">${dateTaken ? 'Booked by admin - closed for proposals.' : (datePast ? 'This date has passed - closed for changes.' : 'You have already proposed this date.')}</span>`}
         </div>
       </div>
     </div>`;
@@ -1299,6 +1444,187 @@ function openDayPanel(dateIso, dayEvents){
   });
 }
 
+/* Safe integer participant count for an event (0 when not set). */
+function participantsNum(ev){
+  const n = ev ? parseInt(ev.participants, 10) : NaN;
+  return isNaN(n) || n < 0 ? 0 : n;
+}
+
+/* Read-only summary of the proposer's details, shown to an admin when they
+   open an existing entry so they can see who proposed it, where, and how
+   many participants it will train while they set the status. */
+function adminProposerDetailsHtml(ev){
+  if(!ev) return '';
+  const rows = [
+    ['Institution / cohort', ev.title],
+    ['Location', ev.location],
+    ['Proposed by', ev.proposedBy],
+    ['Contact details', ev.contact],
+    ['Participants to train', participantsNum(ev) ? participantsNum(ev) : ''],
+    ['Notes', ev.notes]
+  ].filter(r => r[1] !== undefined && r[1] !== null && String(r[1]).trim() !== '');
+  const body = rows.length
+    ? rows.map(r => `<div style="display:flex;gap:8px;padding:4px 0;font-size:12.5px;">
+        <span style="min-width:130px;color:var(--charcoal-soft);font-weight:700;">${r[0]}</span>
+        <span style="color:var(--charcoal);">${escapeHtml(String(r[1]))}</span>
+      </div>`).join('')
+    : '<div class="at-sub">This entry has no proposer details recorded.</div>';
+  return `<div class="lock-note" style="text-align:left;">
+      <div style="font-weight:800;text-transform:uppercase;letter-spacing:.04em;font-size:11px;color:var(--charcoal-soft);margin-bottom:6px;">Proposer details</div>
+      ${body}
+      <div class="at-sub" style="margin-top:8px;">You are setting the status for this date. These details stay as the proposer entered them.</div>
+    </div>`;
+}
+
+/* Change history for an entry - shows WHICH admin set reserved / booked /
+   confirmed / completed / cancelled, and when. Admin views only. */
+function adminAuditHtml(ev){
+  let hist = Array.isArray(ev.history) ? ev.history.slice() : [];
+  if(!hist.length && ev.lastActionBy){
+    hist.push({ by: ev.lastActionBy, status: ev.lastActionStatus, at: ev.lastActionAt });
+  }
+  if(!hist.length){
+    return `<div class="audit-box">
+      <div class="audit-title">Change history &middot; who changed what</div>
+      <div class="audit-cell-sub">No admin changes recorded yet. When you save, the status you set is logged here with your name and the time.</div>
+    </div>`;
+  }
+  const rows = hist.slice().reverse().map(h=>`
+    <div class="audit-row">
+      <span class="badge ${h.status||''}" style="flex:none;">${STATUS_LABEL[h.status]||h.status||'-'}</span>
+      <span class="a-who">${escapeHtml(h.by||'Admin')}</span>
+      <span class="a-when">${escapeHtml(fmtStamp(h.at))}</span>
+    </div>`).join('');
+  return `<div class="audit-box">
+    <div class="audit-title">Change history &middot; who changed what</div>
+    ${rows}
+  </div>`;
+}
+
+/* =====================================================================
+   LOCATION AUTOCOMPLETE (worldwide, Google-Maps-style)
+   ---------------------------------------------------------------------
+   Lets a proposer type ANY place and pick from live suggestions, powered
+   by OpenStreetMap's free Nominatim geocoder (no API key or billing).
+   - When the field is empty/short, we show the common NAAMII presets.
+   - From 3+ characters we search worldwide (debounced, ~1 request/sec to
+     respect Nominatim's usage policy).
+   - Free-typed text always works, so if the network is unavailable the
+     proposer can still just type a location by hand.
+   ===================================================================== */
+function getPresetLocations(){
+  const dl = document.getElementById('locationOptions');
+  if(!dl) return [];
+  return Array.from(dl.querySelectorAll('option')).map(o=>o.value).filter(Boolean);
+}
+
+function attachLocationAutocomplete(input){
+  if(!input || input.disabled) return;
+  const field = input.closest('.field') || input.parentElement;
+  if(field) field.classList.add('loc-field');
+
+  const box = document.createElement('div');
+  box.className = 'loc-suggest';
+  (field || input.parentElement).appendChild(box);
+
+  let items = [];        // current suggestion strings
+  let active = -1;       // keyboard-highlighted index
+  let debounce = null;   // pending network search
+  let lastQuery = '';
+  let seq = 0;           // guards against out-of-order responses
+
+  function hide(){ box.classList.remove('show'); box.innerHTML=''; items=[]; active=-1; }
+  function pinSvg(){ return '<span class="pin">\u25CF</span>'; }
+
+  function renderStatus(text, powered){
+    box.innerHTML = `<div class="loc-status">${escapeHtml(text)}${powered?' <span class="powered">\u00B7 OpenStreetMap</span>':''}</div>`;
+    box.classList.add('show');
+  }
+
+  function renderList(list, powered){
+    items = list.slice(0);
+    active = -1;
+    if(!items.length){ hide(); return; }
+    box.innerHTML = items.map((s,i)=>{
+      const parts = s.split(',');
+      const main = parts[0].trim();
+      const sub = parts.slice(1).join(',').trim();
+      return `<div class="loc-opt" data-i="${i}">${pinSvg()}
+        <div><div class="lo-main">${escapeHtml(main)}</div>${sub?`<div class="lo-sub">${escapeHtml(sub)}</div>`:''}</div>
+      </div>`;
+    }).join('') + (powered ? '<div class="loc-status"><span class="powered">Suggestions from OpenStreetMap</span></div>' : '');
+    box.classList.add('show');
+    box.querySelectorAll('.loc-opt').forEach(el=>{
+      el.addEventListener('mousedown', (e)=>{   // mousedown fires before input blur
+        e.preventDefault();
+        choose(parseInt(el.dataset.i,10));
+      });
+    });
+  }
+
+  function choose(i){
+    if(i<0 || i>=items.length) return;
+    input.value = items[i];
+    hide();
+    input.dispatchEvent(new Event('change'));
+  }
+
+  function showPresets(){
+    const presets = getPresetLocations();
+    if(presets.length) renderList(presets, false);
+    else hide();
+  }
+
+  async function search(q){
+    const mySeq = ++seq;
+    renderStatus('Searching\u2026', true);
+    try{
+      const url = 'https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=0&limit=6&accept-language=en&q='
+        + encodeURIComponent(q);
+      const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+      if(mySeq !== seq) return;               // a newer search superseded this one
+      if(!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      if(mySeq !== seq) return;
+      const names = data.map(d=>d.display_name).filter(Boolean);
+      if(names.length) renderList(names, true);
+      else renderStatus('No matches - you can still type your own location.', false);
+    }catch(e){
+      if(mySeq !== seq) return;
+      renderStatus('Search unavailable - just type your location.', false);
+    }
+  }
+
+  input.addEventListener('input', ()=>{
+    const q = input.value.trim();
+    if(debounce){ clearTimeout(debounce); debounce=null; }
+    if(q.length < 3){ showPresets(); return; }
+    if(q === lastQuery){ return; }
+    lastQuery = q;
+    debounce = setTimeout(()=>search(q), 450);   // debounce keystrokes
+  });
+
+  input.addEventListener('focus', ()=>{
+    const q = input.value.trim();
+    if(q.length < 3) showPresets();
+  });
+
+  input.addEventListener('keydown', (e)=>{
+    if(!box.classList.contains('show')) return;
+    const opts = box.querySelectorAll('.loc-opt');
+    if(e.key==='ArrowDown'){ e.preventDefault(); active=Math.min(active+1,opts.length-1); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); active=Math.max(active-1,0); }
+    else if(e.key==='Enter'){ if(active>=0){ e.preventDefault(); choose(active); } return; }
+    else if(e.key==='Escape'){ hide(); return; }
+    else return;
+    opts.forEach((o,i)=>o.classList.toggle('active', i===active));
+    if(opts[active]) opts[active].scrollIntoView({block:'nearest'});
+  });
+
+  // Hide when focus leaves the field.
+  input.addEventListener('blur', ()=>{ setTimeout(hide, 120); });
+}
+
 /* ---- Modal ---- */
 function openModal(dateIso, existingEvent, defaultStatus){
   if(!profile && !isAdmin()){ showLoginModal(); return; }
@@ -1306,8 +1632,13 @@ function openModal(dateIso, existingEvent, defaultStatus){
   // (Proposers can still open their OWN existing entry.)
   if(!isAdmin()){
     const editingOwn = existingEvent && ownsEvent(existingEvent);
+    // Past dates are locked for proposers: no new proposals, no edits.
+    if(isPastDate(dateIso) && !editingOwn){
+      showToast('This date has passed and is closed for new proposals. Please pick an upcoming date.');
+      return;
+    }
     if(!editingOwn){
-      const taken = events.some(e=>e.date===dateIso && (e.status==='booked' || e.status==='reserved' || e.status==='confirmed'));
+      const taken = events.some(e=>e.date===dateIso && (e.status==='booked' || e.status==='reserved' || e.status==='confirmed' || e.status==='completed'));
       if(taken){ showToast('This date is booked by the admin and is no longer open for proposals.'); return; }
       const alreadyMine = events.some(e=>e.date===dateIso && ownsEvent(e));
       if(alreadyMine){ showToast('You have already proposed this date. Open your entry to edit it instead of adding another.'); return; }
@@ -1319,16 +1650,20 @@ function openModal(dateIso, existingEvent, defaultStatus){
   overlay.className = 'overlay';
   overlay.id = 'modalOverlay';
 
-  const statuses = ['available','proposed','booked','reserved','confirmed','cancelled'];
+  const statuses = ['available','proposed','booked','reserved','confirmed','completed','cancelled'];
   const currentStatus = existingEvent ? existingEvent.status : (defaultStatus || 'proposed');
   const admin = isAdmin();
-  const readOnly = existingEvent ? !canEditEvent(existingEvent) : false;
+  // Proposers cannot change anything on a date that has already passed
+  // (they may still open their own entry, but only to view it).
+  const pastLocked = !admin && isPastDate(dateIso);
+  const readOnly = existingEvent ? (!canEditEvent(existingEvent) || pastLocked) : false;
   const statusLocked = !admin;
 
   overlay.innerHTML = `
     <div class="modal">
       <h3>${readOnly ? 'View date' : (existingEvent ? 'Edit date' : 'Add date')} - ${niceDate(dateIso)}</h3>
-      ${readOnly ? '<div class="lock-note">This date is set by an admin. Switch to admin view to edit it.</div>' : ''}
+      ${(existingEvent && existingEvent.status==='completed') ? `<div class="completed-note">&#10003; Completed cohort &middot; ${niceDate(existingEvent.date)}</div>` : ''}
+      ${pastLocked ? '<div class="lock-note">This date has passed, so it is now read-only. Past dates can only be changed by an admin.</div>' : (readOnly ? '<div class="lock-note">This date is set by an admin. Switch to admin view to edit it.</div>' : '')}
       ${(!readOnly && statusLocked) ? '<div class="lock-note">You can set a date as <b>Proposed</b> or <b>Booked</b>. Only an admin can mark a date available, reserve it, or cancel it.</div>' : ''}
       <div class="field">
         <label>Status</label>
@@ -1350,7 +1685,8 @@ function openModal(dateIso, existingEvent, defaultStatus){
       </div>
       <div class="field">
         <label>Location</label>
-        <input type="text" id="fLocation" list="locationOptions" placeholder="Search or type a location" value="${existingEvent && existingEvent.location ? escapeAttr(existingEvent.location) : ''}" ${readOnly?'disabled':''}>
+        <input type="text" id="fLocation" data-loc-autocomplete="1" autocomplete="off" placeholder="Type any place - e.g. Pokhara, or a college name" value="${existingEvent && existingEvent.location ? escapeAttr(existingEvent.location) : ''}" ${readOnly?'disabled':''}>
+        <div class="at-sub" style="margin-top:5px;">Start typing to search anywhere in the world. Pick a suggestion, or just type your own location.</div>
       </div>
       <div class="field">
         <label>Proposed by</label>
@@ -1361,10 +1697,15 @@ function openModal(dateIso, existingEvent, defaultStatus){
         <input type="text" id="fContact" placeholder="Phone or email" value="${existingEvent && existingEvent.contact ? escapeAttr(existingEvent.contact) : (!existingEvent && profile && profile.contact ? escapeAttr(profile.contact) : '')}" ${readOnly?'disabled':''}>
       </div>
       <div class="field">
+        <label>Number of participants to be trained <span style="color:var(--red)">*</span></label>
+        <input type="number" min="1" step="1" id="fParticipants" placeholder="e.g. 30" value="${existingEvent && existingEvent.participants!=null && existingEvent.participants!=='' ? existingEvent.participants : ''}" ${readOnly?'disabled':''}>
+        <div class="at-sub" style="margin-top:5px;">How many people this cohort will train. This feeds the "people trained" count once the cohort is confirmed.</div>
+      </div>
+      <div class="field">
         <label>Notes</label>
         <textarea id="fNotes" placeholder="Any extra detail..." ${readOnly?'disabled':''}>${existingEvent && existingEvent.notes ? existingEvent.notes : ''}</textarea>
       </div>`}
-      ${admin ? '<div class="lock-note">As admin you are setting the status for this date. Institution and contact details stay as the proposer entered them.</div>' : ''}
+      ${admin ? (existingEvent ? (adminProposerDetailsHtml(existingEvent) + adminAuditHtml(existingEvent)) : '<div class="lock-note">As admin you are setting the status for this new date. Institution and contact details stay as the proposer entered them.</div>') : ''}
       <div class="err" id="formErr" style="margin-top:2px;">Please select a status before saving.</div>
       <div class="modal-actions">
         <div>${(existingEvent && !readOnly) ? '<button class="btn btn-danger" id="delBtn">Delete</button>' : ''}</div>
@@ -1375,6 +1716,10 @@ function openModal(dateIso, existingEvent, defaultStatus){
       </div>
     </div>`;
   document.body.appendChild(overlay);
+
+  // Turn the location field into a worldwide, type-anything search.
+  const locInput = overlay.querySelector('[data-loc-autocomplete]');
+  if(locInput) attachLocationAutocomplete(locInput);
 
   let selectedStatus = currentStatus;
   overlay.querySelectorAll('.status-opt').forEach(opt=>{
@@ -1412,17 +1757,30 @@ function openModal(dateIso, existingEvent, defaultStatus){
   if(saveBtn){
     saveBtn.addEventListener('click', async ()=>{
       const q = sel => overlay.querySelector(sel);
-      const dEl=q('#fDate'), tEl=q('#fTitle'), lEl=q('#fLocation'), pEl=q('#fProposer'), cEl=q('#fContact'), nEl=q('#fNotes');
+      const dEl=q('#fDate'), tEl=q('#fTitle'), lEl=q('#fLocation'), pEl=q('#fProposer'), cEl=q('#fContact'), nEl=q('#fNotes'), ptEl=q('#fParticipants');
       const dateVal = dEl ? dEl.value : (existingEvent ? existingEvent.date : dateIso);
       const titleVal = tEl ? tEl.value.trim() : (existingEvent ? (existingEvent.title||'') : '');
       const locationVal = lEl ? lEl.value.trim() : (existingEvent ? (existingEvent.location||'') : '');
       const proposerVal = pEl ? pEl.value.trim() : (existingEvent ? (existingEvent.proposedBy||'') : '');
       const contactVal = cEl ? cEl.value.trim() : (existingEvent ? (existingEvent.contact||'') : '');
       const notesVal = nEl ? nEl.value.trim() : (existingEvent ? (existingEvent.notes||'') : '');
+      // Number of participants this cohort will train. Kept as a whole number
+      // (or empty when not set) so the admin "people trained" total is accurate.
+      let participantsVal = ptEl ? ptEl.value.trim() : (existingEvent && existingEvent.participants!=null ? existingEvent.participants : '');
+      if(participantsVal !== ''){
+        const pn = parseInt(participantsVal, 10);
+        participantsVal = (isNaN(pn) || pn < 0) ? '' : pn;
+      }
       const errEl = q('#formErr');
 
       if(!dateVal || !selectedStatus){
         errEl.textContent = 'Please choose a date and a status before saving.';
+        errEl.style.display = 'block';
+        return;
+      }
+      // Proposers must say how many people the cohort will train.
+      if(ptEl && (participantsVal === '' || participantsVal <= 0)){
+        errEl.textContent = 'Please enter how many participants this cohort will train.';
         errEl.style.display = 'block';
         return;
       }
@@ -1432,6 +1790,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
         ? (PROPOSER_STATUSES.includes(selectedStatus) ? selectedStatus : 'proposed')
         : selectedStatus;
 
+      const nowIso = new Date().toISOString();
       let saved = null;
       if(editingId){
         const ev = events.find(e=>e.id===editingId);
@@ -1439,16 +1798,35 @@ function openModal(dateIso, existingEvent, defaultStatus){
           ev.date = dateVal; ev.status = finalStatus; ev.title = titleVal;
           ev.location = locationVal; ev.proposedBy = proposerVal;
           ev.contact = contactVal; ev.notes = notesVal;
-          ev.updatedAt = new Date().toISOString();
+          if(ptEl) ev.participants = participantsVal;   // only overwrite when the field was shown
+          ev.updatedAt = nowIso;
+          // Audit trail: record which admin made this change (and the status set).
+          if(admin){
+            ev.history = Array.isArray(ev.history) ? ev.history : [];
+            ev.history.push({ by: adminName || 'Admin', status: finalStatus, at: nowIso });
+            ev.lastActionBy = adminName || 'Admin';
+            ev.lastActionStatus = finalStatus;
+            ev.lastActionAt = nowIso;
+            if(finalStatus==='completed' && !ev.completedAt) ev.completedAt = nowIso;
+          }
           saved = ev;
         }
       }else{
         saved = {
           id: uid(), date: dateVal, status: finalStatus, title: titleVal,
           location: locationVal, proposedBy: proposerVal, contact: contactVal,
-          notes: notesVal, ownerId: profile ? profile.userId : null,
-          createdAt: new Date().toISOString()
+          notes: notesVal, participants: participantsVal,
+          ownerId: profile ? profile.userId : null,
+          createdAt: nowIso
         };
+        // Audit trail for admin-created entries.
+        if(admin){
+          saved.history = [{ by: adminName || 'Admin', status: finalStatus, at: nowIso }];
+          saved.lastActionBy = adminName || 'Admin';
+          saved.lastActionStatus = finalStatus;
+          saved.lastActionAt = nowIso;
+          if(finalStatus==='completed') saved.completedAt = nowIso;
+        }
         events.push(saved);
       }
       if(saved) await persistEvent(saved);
@@ -1504,14 +1882,19 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
     Status: STATUS_LABEL[ev.status] || ev.status,
     'Institution / Cohort': ev.title || '',
     Location: ev.location || '',
+    Participants: participantsNum(ev) ? participantsNum(ev) : '',
     'Proposed by': ev.proposedBy || '',
     'Contact details': ev.contact || '',
     Notes: ev.notes || '',
+    'Last changed by': ev.lastActionBy || '',
+    'Last change': ev.lastActionStatus ? (STATUS_LABEL[ev.lastActionStatus] || ev.lastActionStatus) : '',
+    'Last changed at': ev.lastActionAt ? fmtStamp(ev.lastActionAt) : '',
+    'Completed at': ev.completedAt ? fmtStamp(ev.completedAt) : '',
     'Created at': ev.createdAt || ''
   }));
   if(rows.length===0){ showToast('No dates to export yet.'); return; }
   const ws = XLSX.utils.json_to_sheet(rows);
-  ws['!cols'] = [{wch:12},{wch:11},{wch:28},{wch:22},{wch:16},{wch:20},{wch:30},{wch:22}];
+  ws['!cols'] = [{wch:12},{wch:11},{wch:28},{wch:22},{wch:12},{wch:16},{wch:20},{wch:30},{wch:16},{wch:12},{wch:20},{wch:20},{wch:22}];
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, ws, 'UDAAN Cohort Calendar');
   const stamp = fmtDate(new Date());
