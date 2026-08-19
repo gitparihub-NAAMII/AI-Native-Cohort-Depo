@@ -327,7 +327,7 @@
     border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px;
     position:relative;overflow:hidden;}
   .trained-card .tc-blob{position:absolute;right:-40px;top:-40px;width:160px;height:160px;border-radius:50%;
-    background:rgba(30,168,92,0.16);}
+    background:rgba(219,5,5,0.20);}
   .trained-head{display:flex;align-items:center;gap:12px;margin-bottom:14px;position:relative;z-index:1;}
   .trained-head svg{width:30px;height:30px;flex:none;}
   .trained-head h3{margin:0;font-size:15px;font-weight:700;letter-spacing:.01em;}
@@ -587,10 +587,21 @@ const STATUS_LABEL = {available:'Available', proposed:'Proposed', booked:'Booked
 // "Booked", "Available", "Confirmed" and "Cancelled" are ADMIN-ONLY.
 const PROPOSER_STATUSES = ['proposed'];
 
+// A proposer may hold at most this many active (non-cancelled) cohorts at a
+// time. Admins are not limited.
+const MAX_COHORTS_PER_USER = 5;
+function myActiveCohortCount(){
+  if(!profile) return 0;
+  return events.filter(e => e.ownerId===profile.userId && e.status!=='cancelled').length;
+}
+
 function isAdmin(){ return role==='admin'; }
 function ownsEvent(ev){ return !!(profile && ev && ev.ownerId && ev.ownerId===profile.userId); }
-function canEditEvent(ev){ return isAdmin() || ownsEvent(ev); }
-function canDeleteEvent(ev){ return isAdmin() || ownsEvent(ev); }
+// Once an admin has confirmed or completed a slot, the proposer can no
+// longer edit or delete it - only admins can. (Applies to all 3 calendars.)
+const LOCKED_FOR_PROPOSER = ['confirmed','completed'];
+function canEditEvent(ev){ return isAdmin() || (ownsEvent(ev) && !LOCKED_FOR_PROPOSER.includes(ev && ev.status)); }
+function canDeleteEvent(ev){ return isAdmin() || (ownsEvent(ev) && !LOCKED_FOR_PROPOSER.includes(ev && ev.status)); }
 // Booked slots are admin-only: proposers/users never see them.
 function roleVisibleEvents(){ return events; }
 
@@ -1185,9 +1196,10 @@ function renderMyProgress(){
   mine.forEach(e=>{ if(mc[e.status]!==undefined) mc[e.status]++; });
 
   const firstName = profile.name.split(' ')[0];
+  const activeCount = mine.filter(e=>e.status!=='cancelled').length;
   let html = `<div class="myprog-head">
       <h3>Your progress, ${escapeHtml(firstName)}</h3>
-      <span class="sub">${mine.length} date${mine.length===1?'':'s'} on the calendar</span>
+      <span class="sub">${activeCount} of ${MAX_COHORTS_PER_USER} active cohort${activeCount===1?'':'s'} &middot; ${mine.length} total on the calendar</span>
     </div>
     <div class="myprog-stats">
       <div class="mp-stat"><div class="n" style="color:var(--proposed-ink)">${mc.proposed}</div><div class="l">Proposed</div></div>
@@ -1632,6 +1644,11 @@ function openModal(dateIso, existingEvent, defaultStatus){
   // (Proposers can still open their OWN existing entry.)
   if(!isAdmin()){
     const editingOwn = existingEvent && ownsEvent(existingEvent);
+    // Cap: a proposer may hold at most MAX_COHORTS_PER_USER cohorts at a time.
+    if(!existingEvent && myActiveCohortCount() >= MAX_COHORTS_PER_USER){
+      showToast('You can have up to ' + MAX_COHORTS_PER_USER + ' cohorts at a time. Please cancel or wait on one before proposing another.');
+      return;
+    }
     // Past dates are locked for proposers: no new proposals, no edits.
     if(isPastDate(dateIso) && !editingOwn){
       showToast('This date has passed and is closed for new proposals. Please pick an upcoming date.');
@@ -1656,6 +1673,8 @@ function openModal(dateIso, existingEvent, defaultStatus){
   // Proposers cannot change anything on a date that has already passed
   // (they may still open their own entry, but only to view it).
   const pastLocked = !admin && isPastDate(dateIso);
+  // Proposers cannot edit their own slot once an admin confirms or completes it.
+  const lockedByStatus = !admin && !!existingEvent && ownsEvent(existingEvent) && LOCKED_FOR_PROPOSER.includes(existingEvent.status);
   const readOnly = existingEvent ? (!canEditEvent(existingEvent) || pastLocked) : false;
   const statusLocked = !admin;
 
@@ -1663,7 +1682,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
     <div class="modal">
       <h3>${readOnly ? 'View date' : (existingEvent ? 'Edit date' : 'Add date')} - ${niceDate(dateIso)}</h3>
       ${(existingEvent && existingEvent.status==='completed') ? `<div class="completed-note">&#10003; Completed cohort &middot; ${niceDate(existingEvent.date)}</div>` : ''}
-      ${pastLocked ? '<div class="lock-note">This date has passed, so it is now read-only. Past dates can only be changed by an admin.</div>' : (readOnly ? '<div class="lock-note">This date is set by an admin. Switch to admin view to edit it.</div>' : '')}
+      ${pastLocked ? '<div class="lock-note">This date has passed, so it is now read-only. Past dates can only be changed by an admin.</div>' : (lockedByStatus ? ('<div class="lock-note">This cohort has been ' + (STATUS_LABEL[existingEvent.status]||'').toLowerCase() + ' by the admin and can no longer be edited.</div>') : (readOnly ? '<div class="lock-note">This date is set by an admin. Switch to admin view to edit it.</div>' : ''))}
       ${(!readOnly && statusLocked) ? '<div class="lock-note">You can set a date as <b>Proposed</b> or <b>Booked</b>. Only an admin can mark a date available, reserve it, or cancel it.</div>' : ''}
       <div class="field">
         <label>Status</label>
