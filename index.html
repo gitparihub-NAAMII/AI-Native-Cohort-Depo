@@ -1673,6 +1673,9 @@ function openModal(dateIso, existingEvent, defaultStatus){
   // Proposers cannot change anything on a date that has already passed
   // (they may still open their own entry, but only to view it).
   const pastLocked = !admin && isPastDate(dateIso);
+  // On dates that have already passed, admins may also edit the proposer's
+  // submitted details (name, participants trained, location, contact, notes).
+  const adminCanEditDetails = admin && isPastDate(dateIso);
   // Proposers cannot edit their own slot once an admin confirms or completes it.
   const lockedByStatus = !admin && !!existingEvent && ownsEvent(existingEvent) && LOCKED_FOR_PROPOSER.includes(existingEvent.status);
   const readOnly = existingEvent ? (!canEditEvent(existingEvent) || pastLocked) : false;
@@ -1697,7 +1700,8 @@ function openModal(dateIso, existingEvent, defaultStatus){
         <label>Date</label>
         <input type="date" id="fDate" value="${dateIso}" ${readOnly?'disabled':''}>
       </div>
-      ${admin ? '' : `
+      ${adminCanEditDetails ? `<div class="lock-note" style="text-align:left;">This date has passed. As admin you can correct the proposer's details below - including their name and the number of participants trained. Your changes are logged.</div>` : ''}
+      ${(admin && !adminCanEditDetails) ? '' : `
       <div class="field">
         <label>Institution name</label>
         <input type="text" id="fTitle" placeholder="e.g. Khowpa Engineering College" value="${existingEvent && existingEvent.title ? escapeAttr(existingEvent.title) : ''}" ${readOnly?'disabled':''}>
@@ -1724,7 +1728,7 @@ function openModal(dateIso, existingEvent, defaultStatus){
         <label>Notes</label>
         <textarea id="fNotes" placeholder="Any extra detail..." ${readOnly?'disabled':''}>${existingEvent && existingEvent.notes ? existingEvent.notes : ''}</textarea>
       </div>`}
-      ${admin ? (existingEvent ? (adminProposerDetailsHtml(existingEvent) + adminAuditHtml(existingEvent)) : '<div class="lock-note">As admin you are setting the status for this new date. Institution and contact details stay as the proposer entered them.</div>') : ''}
+      ${admin ? (adminCanEditDetails ? (existingEvent ? adminAuditHtml(existingEvent) : '') : (existingEvent ? (adminProposerDetailsHtml(existingEvent) + adminAuditHtml(existingEvent)) : '<div class="lock-note">As admin you are setting the status for this new date. Institution and contact details stay as the proposer entered them.</div>')) : ''}
       <div class="err" id="formErr" style="margin-top:2px;">Please select a status before saving.</div>
       <div class="modal-actions">
         <div>${(existingEvent && !readOnly) ? '<button class="btn btn-danger" id="delBtn">Delete</button>' : ''}</div>
@@ -1798,7 +1802,8 @@ function openModal(dateIso, existingEvent, defaultStatus){
         return;
       }
       // Proposers must say how many people the cohort will train.
-      if(ptEl && (participantsVal === '' || participantsVal <= 0)){
+      // Admins editing a passed date may leave it as-is / blank.
+      if(ptEl && !admin && (participantsVal === '' || participantsVal <= 0)){
         errEl.textContent = 'Please enter how many participants this cohort will train.';
         errEl.style.display = 'block';
         return;
