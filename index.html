@@ -371,6 +371,130 @@
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:340px;}
   .loc-status{padding:9px 12px;font-size:12px;color:var(--charcoal-soft);}
   .loc-status .powered{color:var(--coolgrey);font-size:11px;}
+
+  /* ============ ADDED FEATURES: open cohorts, seats, master dashboard ============ */
+  .tag-ind{display:inline-block;background:#ECE7FE;color:#5B3FC4;border-radius:5px;padding:1px 6px;font-size:10.5px;font-weight:700;}
+
+  /* Individual / Institution chooser */
+  .type-choose{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px;}
+  @media(max-width:520px){.type-choose{grid-template-columns:1fr;}}
+  .type-opt{border:1.5px solid var(--line);border-radius:14px;padding:18px 14px;cursor:pointer;text-align:center;background:var(--cream);}
+  .type-opt:hover{border-color:var(--red);background:#fff;transform:translateY(-1px);box-shadow:var(--shadow);}
+  .type-opt .ti{font-size:26px;}
+  .type-opt .tt{font-weight:800;font-size:15px;margin-top:6px;color:var(--charcoal);}
+  .type-opt .ts{font-size:11.5px;color:var(--charcoal-soft);margin-top:3px;line-height:1.4;}
+
+  /* Seats banner (individual apply) */
+  .seats-banner{border:1px solid #BCE7CE;background:linear-gradient(135deg,#E3F6EC,#F3FBF6);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .seats-top{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+  .seats-num{font-size:30px;font-weight:800;color:var(--available-ink);line-height:1;}
+  .seats-num.full{color:var(--cancelled-ink);}
+  .seats-cap{font-size:12.5px;color:var(--charcoal-soft);font-weight:600;}
+  .seats-meta{font-size:12px;color:var(--charcoal-soft);margin-top:2px;}
+  .seats-bar{height:10px;border-radius:6px;background:#CDEBD9;overflow:hidden;margin-top:10px;}
+  .seats-bar .fill{height:100%;background:linear-gradient(90deg,var(--available),var(--available-ink));}
+  .oc-info{font-size:12.5px;color:var(--charcoal);background:var(--cream);border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:12px;}
+
+  /* Confirm step + disclaimer */
+  .confirm-sum{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:var(--cream);margin-bottom:12px;}
+  .confirm-sum .cs-row{display:flex;gap:8px;padding:4px 0;font-size:13px;}
+  .confirm-sum .cs-k{min-width:110px;color:var(--charcoal-soft);font-weight:700;}
+  .disclaimer{background:#FCF3CE;color:#8A6A00;border:1px solid #F0D98A;border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:600;line-height:1.5;margin-bottom:6px;}
+
+  /* Highlighted Venue: / Time: block (individual open-cohort apply) */
+  .oc-details{border:1px solid #D6CCFB;background:linear-gradient(135deg,#F3F0FE,#FBFAFF);border-radius:12px;padding:12px 14px;margin-bottom:14px;}
+  .ocd-row{display:flex;gap:10px;align-items:baseline;padding:3px 0;font-size:13.5px;}
+  .ocd-k{min-width:56px;font-weight:800;color:var(--reserved-ink);text-transform:none;letter-spacing:0;}
+  .ocd-v{color:var(--charcoal);font-weight:600;}
+
+  /* Seat-booked success screen */
+  .seat-success{text-align:center;padding:8px 4px 4px;}
+  .seat-success .ss-ring{width:78px;height:78px;border-radius:50%;margin:6px auto 14px;
+    background:var(--available-bg);border:2px solid #BCE7CE;display:flex;align-items:center;justify-content:center;
+    animation:ssPop .35s ease;}
+  .seat-success .ss-ring svg{width:42px;height:42px;}
+  @keyframes ssPop{0%{transform:scale(.6);opacity:0;}100%{transform:scale(1);opacity:1;}}
+  .seat-success h3{margin:0 0 6px;font-size:19px;font-weight:800;color:var(--available-ink);}
+  .seat-success h3 .ss-tick{color:var(--available-ink);}
+  .seat-success .ss-msg{font-size:13.5px;color:var(--charcoal);line-height:1.55;margin:0 auto 6px;max-width:340px;}
+  .seat-success .ss-note{font-size:12.5px;color:var(--charcoal-soft);line-height:1.5;margin:10px auto 4px;max-width:340px;}
+  .seat-success .ss-chan{display:inline-flex;align-items:center;gap:6px;font-weight:700;color:var(--available-ink);}
+
+  /* Admin open-cohort settings */
+  .oc-admin{background:#F3FBF6;border:1px dashed #BCE7CE;border-radius:12px;padding:12px 14px;}
+  .oc-admin .oc-hint{font-weight:600;color:var(--charcoal-soft);text-transform:none;letter-spacing:0;font-size:11px;}
+  .oc-admin-grid{display:grid;grid-template-columns:1fr;gap:8px;}
+  .oc-admin-grid input{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:13.5px;font-family:inherit;color:var(--charcoal);background:#fff;}
+  .oc-occ{font-size:12px;font-weight:700;color:var(--available-ink);margin-top:8px;}
+
+  /* Combined "total trained" hero (dashboard) */
+  .combined-hero{background:linear-gradient(135deg,#0E7C41 0%,#127A45 45%,#1EA85C 100%);color:#fff;border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden;}
+  .combined-hero .ch-blob{position:absolute;right:-40px;top:-50px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,0.08);}
+  .combined-hero .ch-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;opacity:.92;}
+  .combined-hero .ch-num{font-size:56px;font-weight:900;line-height:1;margin:6px 0 2px;letter-spacing:-0.02em;}
+  .combined-hero .ch-sub{font-size:13px;opacity:.95;}
+  .combined-hero .ch-split{display:flex;gap:22px;margin-top:14px;flex-wrap:wrap;position:relative;z-index:1;}
+  .combined-hero .ch-split .n{font-size:22px;font-weight:800;}
+  .combined-hero .ch-split .l{font-size:11px;opacity:.9;font-weight:600;}
+
+  /* Open-cohort tracker card */
+  .oc-card{background:linear-gradient(135deg,#5B3FC4 0%,#7A5AF0 100%);color:#fff;border-radius:14px;padding:20px 22px;box-shadow:var(--shadow);margin-bottom:16px;position:relative;overflow:hidden;}
+  .oc-card .oc-blob{position:absolute;right:-40px;top:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.10);}
+  .oc-card h3{margin:0 0 2px;font-size:15px;font-weight:800;}
+  .oc-card .oc-s{font-size:12px;opacity:.9;margin-bottom:14px;}
+  .oc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;position:relative;z-index:1;}
+  .oc-stat{background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.16);border-radius:11px;padding:12px 14px;}
+  .oc-stat .n{font-size:26px;font-weight:900;line-height:1;}
+  .oc-stat .l{font-size:11px;opacity:.92;font-weight:600;margin-top:5px;}
+
+  /* ---- Master dashboard (admin only) ---- */
+  .master-wrap{display:flex;flex-direction:column;gap:16px;}
+  .master-banner{background:var(--red-soft);color:var(--red);border:1px solid #F3C4CA;border-radius:9px;padding:9px 12px;font-size:12.5px;font-weight:700;}
+  .countdown-card{background:linear-gradient(120deg,#454d59 0%,#2b303a 55%,#8a0404 130%);color:#fff;border-radius:18px;padding:26px 24px;text-align:center;box-shadow:var(--shadow);position:relative;overflow:hidden;}
+  .countdown-card .cc-eyebrow{font-size:12px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;opacity:.9;}
+  .countdown-card .cc-timer{display:flex;justify-content:center;gap:14px;margin:16px 0 8px;flex-wrap:wrap;}
+  .cd-unit{background:rgba(255,255,255,0.10);border:1px solid rgba(255,255,255,0.18);border-radius:14px;padding:14px 10px;min-width:88px;}
+  .cd-num{font-size:44px;font-weight:900;line-height:1;font-variant-numeric:tabular-nums;}
+  .cd-label{font-size:11px;letter-spacing:.1em;text-transform:uppercase;opacity:.85;margin-top:6px;}
+  .cc-deadline{font-size:14px;font-weight:700;margin-top:6px;}
+  .cc-deadline .d-date{color:#FFD2D2;}
+
+  .master-hero{display:grid;grid-template-columns:1.1fr 1fr;gap:16px;}
+  @media(max-width:720px){.master-hero{grid-template-columns:1fr;}}
+  .mh-total{background:#fff;border:1px solid var(--line);border-radius:16px;padding:22px 24px;box-shadow:var(--shadow);}
+  .mh-total .mh-label{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--charcoal-soft);}
+  .mh-total .mh-num{font-size:50px;font-weight:900;line-height:1;color:var(--charcoal);margin:6px 0 2px;letter-spacing:-0.02em;}
+  .mh-total .mh-num em{color:var(--red);font-style:normal;}
+  .mh-total .mh-sub{font-size:13px;color:var(--charcoal-soft);}
+  .mh-bar{height:14px;border-radius:8px;background:var(--line);overflow:hidden;margin-top:14px;}
+  .mh-bar .fill{height:100%;background:linear-gradient(90deg,#1EA85C,#0E7C41);}
+  .mh-pie{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);display:flex;gap:16px;align-items:center;flex-wrap:wrap;justify-content:center;}
+  .pie-legend{display:flex;flex-direction:column;gap:8px;}
+  .pie-legend .pl{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;color:var(--charcoal);}
+  .pie-legend .sw{width:12px;height:12px;border-radius:3px;flex:none;}
+
+  .seg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+  @media(max-width:720px){.seg-grid{grid-template-columns:1fr;}}
+  .seg-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;box-shadow:var(--shadow);text-align:center;}
+  .seg-card h4{margin:0 0 12px;font-size:14px;font-weight:800;}
+  .seg-vals{margin-top:10px;font-size:12.5px;color:var(--charcoal-soft);}
+  .seg-vals b{color:var(--charcoal);font-size:15px;}
+
+  .chart-card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px 18px 12px;box-shadow:var(--shadow);}
+  .chart-card h4{margin:0 0 14px;font-size:14px;font-weight:800;}
+  .bars-mini{display:flex;flex-direction:column;gap:12px;}
+  .bm-top{display:flex;justify-content:space-between;font-size:12px;font-weight:700;color:var(--charcoal);margin-bottom:4px;}
+  .bm-top .bm-y{color:var(--charcoal-soft);}
+  .bm-track{height:16px;border-radius:8px;background:var(--line);overflow:hidden;}
+  .bm-fill{height:100%;border-radius:8px;}
+  .bm-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:8px;font-size:11.5px;color:var(--charcoal-soft);font-weight:600;}
+
+  .mtable{width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;box-shadow:var(--shadow);}
+  .mtable th,.mtable td{padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--line);text-align:center;}
+  .mtable th{background:#FBFAF6;color:var(--charcoal-soft);text-transform:uppercase;font-size:11px;letter-spacing:.04em;}
+  .mtable td:first-child,.mtable th:first-child{text-align:left;}
+  .mtable tr:last-child td{border-bottom:none;}
+  .mtable .tot td{font-weight:800;background:#FBFAF7;}
 </style>
 </head>
 <body>
@@ -399,6 +523,7 @@
       <div class="tabs">
         <button class="tab-btn active" data-tab="cal">Calendar</button>
         <button class="tab-btn" data-tab="list">Dashboard</button>
+        <button class="tab-btn" data-tab="master" id="masterTabBtn" style="display:none;">Master</button>
       </div>
       <div class="role-box" id="userBox" style="display:none;">
         <span class="user-chip" id="userChip"><span class="u-dot"></span><span id="userChipName">-</span></span>
@@ -452,12 +577,15 @@
   <div id="listTab" style="display:none;">
     <div class="admin-only-banner">Admin dashboard - institution, proposer and contact details below are private. Handle with care.</div>
     <div id="trainedTracker"></div>
+    <div id="openCohortTracker"></div>
     <div class="stat-row" id="statRow"></div>
     <div class="filter-row" id="filterRow"></div>
     <div class="table-scroll" id="listWrap"><div class="loading">Loading&hellip;</div></div>
     <button class="btn btn-ghost" id="exportBtn" style="margin-top:14px;">Export to Excel (.xlsx)</button>
     <p class="shared-note">Download the full record, then save or drag it into your OneDrive folder to keep it synced there. This artifact can't write to OneDrive directly, so exporting is a manual (but one-click) step.</p>
   </div>
+
+  <div id="masterTab" style="display:none;"></div>
 
   <p class="made-by">&copy; 2026 NAAMII. All rights reserved.</p>
 
@@ -616,6 +744,7 @@ function updateRoleUI(){
     label.classList.add('admin');
     btn.textContent = 'Switch to proposer view';
     listTabBtn.style.display = '';
+    { const _mtb=document.getElementById('masterTabBtn'); if(_mtb) _mtb.style.display=''; }
     permNote.textContent = 'As admin, you can see every detail, mark dates available, set them as booked, reserved, confirmed or completed, cancel/remove dates, and change past dates. Marking a cohort completed updates the people-trained totals automatically.';
     sharedNote.textContent = 'This calendar is shared. Proposer names and contact details are only visible to admins.';
   }else{
@@ -623,9 +752,11 @@ function updateRoleUI(){
     label.classList.remove('admin');
     btn.textContent = adminAuthed ? 'Switch to admin dashboard' : 'Admin login';
     listTabBtn.style.display = 'none';
+    { const _mtb=document.getElementById('masterTabBtn'); if(_mtb) _mtb.style.display='none'; }
     permNote.textContent = 'You can propose a date and edit or remove your own proposals any time - they are tagged with your name and a dark ring so you can spot them. You can\u2019t edit other partners\u2019 dates, and booking, reserving, marking a date available, and cancelling are handled by the NAAMII admin team.';
     sharedNote.textContent = 'This calendar is shared. For everyone\u2019s privacy, proposer names and contact details are only visible to admins.';
-    if(document.querySelector('.tab-btn[data-tab="list"]').classList.contains('active')){
+    const _actTab = document.querySelector('.tab-btn.active');
+    if(_actTab && (_actTab.dataset.tab==='list' || _actTab.dataset.tab==='master')){
       document.querySelector('.tab-btn[data-tab="cal"]').click();
     }
   }
@@ -684,7 +815,8 @@ function showLoginModal(){
       ${logoSrc ? `<div style="text-align:center;margin-bottom:16px;"><img src="${logoSrc}" alt="NAAMII logo" style="height:42px;width:auto;"></div>` : ''}
       <h3>Sign in to the cohort calendar</h3>
       <p class="intro">Add your details once so the calendar can keep track of the dates you propose,
-      and show your progress. Your name and contact are only visible to the NAAMII admin team.</p>
+      and show your progress. Sign in with the <b>same name and contact</b> on any device to see the
+      dates you proposed and their status. Your name and contact are only visible to the NAAMII admin team.</p>
       <div class="field">
         <label>Your name <span style="color:var(--red)">*</span></label>
         <input type="text" id="lgName" placeholder="e.g. Sita Sharma" value="${profile && profile.name ? escapeAttr(profile.name) : ''}">
@@ -694,9 +826,9 @@ function showLoginModal(){
         <input type="text" id="lgOrg" list="locationOptions" placeholder="e.g. Khowpa Engineering College" value="${profile && profile.org ? escapeAttr(profile.org) : ''}">
       </div>
       <div class="field">
-        <label>Contact (phone or email)</label>
-        <input type="text" id="lgContact" placeholder="So the team can reach you" value="${profile && profile.contact ? escapeAttr(profile.contact) : ''}">
-        <div class="err" id="lgErr">Please enter your name to continue.</div>
+        <label>Email or phone <span style="color:var(--red)">*</span></label>
+        <input type="text" id="lgContact" placeholder="Used to recognise you on any device" value="${profile && profile.contact ? escapeAttr(profile.contact) : ''}">
+        <div class="err" id="lgErr">Please enter your name and an email or phone to continue.</div>
       </div>
       <div class="modal-actions">
         <div><button class="link-btn" id="lgAdmin">Log in as admin instead</button></div>
@@ -713,9 +845,12 @@ function showLoginModal(){
     const org = overlay.querySelector('#lgOrg').value.trim();
     const contact = overlay.querySelector('#lgContact').value.trim();
     const errEl = overlay.querySelector('#lgErr');
-    if(!name){ errEl.style.display = 'block'; return; }
+    if(!name || !contact){ errEl.style.display = 'block'; return; }
+    // Identity is derived from name + contact so the SAME credentials always
+    // resolve to the SAME user on any device - that is what lets a returning
+    // proposer see the dates they proposed and track any status changes.
     profile = {
-      userId: (profile && profile.userId) ? profile.userId : ('u' + Date.now().toString(36) + Math.random().toString(36).slice(2,7)),
+      userId: 'u_' + stableId(normId(name) + '|' + normId(contact)),
       name, org, contact
     };
     await saveUser();
@@ -1006,14 +1141,14 @@ function renderCalendar(){
         const myFirst = (profile && profile.name ? profile.name.split(' ')[0] : 'You');
         band.textContent = myFirst + ' · ' + STATUS_LABEL[ev.status];
       }else{
-        band.textContent = STATUS_LABEL[ev.status];
+        band.textContent = proposerStatusLabel(ev);
       }
       if(ev.status==='completed'){ band.title = 'Completed cohort - ' + niceDate(ev.date); }
       band.addEventListener('click', (e)=>{
         e.stopPropagation();
         if(isAdmin()){ openModal(ev.date, ev); return; }
         if(mine){ openModal(ev.date, ev); return; }            // edit your own entry
-        if(ev.status==='available'){ openModal(ev.date, null, 'proposed'); }
+        if(ev.status==='available'){ newProposal(ev.date, 'proposed'); }
         else{ showToast('This date belongs to another partner - only admins can see its details.'); }
       });
       bandsWrap.appendChild(band);
@@ -1026,7 +1161,7 @@ function renderCalendar(){
       bandsWrap.appendChild(more);
     }
     div.addEventListener('click', ()=>{
-      if(dayEvents.length===0){ openModal(iso, null); return; }
+      if(dayEvents.length===0){ newProposal(iso); return; }
       openDayPanel(iso, isAdmin() ? dayEvents : displayEvents);
     });
     grid.appendChild(div);
@@ -1058,6 +1193,8 @@ function renderStats(){
   renderAvailability();
   renderMyProgress();
   renderTrained();
+  renderOpenCohortTracker();
+  renderMasterIfVisible();
 }
 
 /* ---- People trained tracker (admin dashboard) ----
@@ -1072,6 +1209,7 @@ function renderTrained(){
   let trained = 0, completedCohorts = 0;   // completed = cohort delivered
   let upcoming = 0, upcomingCohorts = 0;   // confirmed / reserved / booked = pipeline
   events.forEach(e=>{
+    if(isOpenCohort(e) || e.applicantType==='individual') return; // open cohorts tracked separately
     const n = participantsNum(e);
     if(e.status==='completed'){ trained += n; completedCohorts++; }
     else if(e.status==='confirmed' || e.status==='reserved' || e.status==='booked'){ upcoming += n; upcomingCohorts++; }
@@ -1265,7 +1403,7 @@ function renderList(){
   rows.forEach(ev=>{
     html += `<tr>
       <td>${niceDate(ev.date)}</td>
-      <td>${ev.title ? escapeHtml(ev.title) : '-'}</td>
+      <td>${ev.title ? escapeHtml(ev.title) : (ev.applicantType==='individual' ? '<span class="tag-ind">Individual</span> ' + escapeHtml(ev.proposedBy||'') : '-')}</td>
       <td>${ev.location ? escapeHtml(ev.location) : '-'}</td>
       <td><span class="badge ${ev.status}">${STATUS_LABEL[ev.status]}</span></td>
       <td>${participantsNum(ev) ? participantsNum(ev) : '-'}</td>
@@ -1419,15 +1557,16 @@ function openDayPanel(dateIso, dayEvents){
           const mine = ownsEvent(ev);
           const actionable = bookable || mine;
           const myFirst = (profile && profile.name ? profile.name.split(' ')[0] : 'You');
-          const mainLabel = mine ? (myFirst + ' · ' + STATUS_LABEL[ev.status]) : STATUS_LABEL[ev.status];
+          const mainLabel = mine ? (myFirst + ' · ' + STATUS_LABEL[ev.status]) : proposerStatusLabel(ev);
+          const _si = (bookable && isOpenCohort(ev)) ? seatsInfo(ev) : null;
           const subLabel = mine ? 'Your entry - tap to edit'
-                                : (bookable ? 'Tap to propose this date' : 'Details visible to admins only');
+                                : (bookable ? ((_si ? 'Tap to register' : 'Tap to apply') + (_si ? (' \u00B7 ' + _si.available + ' of ' + _si.capacity + ' seats open') : '')) : 'Details visible to admins only');
           return `<div class="day-panel-item${actionable?'':' notBookable'}${mine?' mine':''}" data-id="${ev.id}" data-actionable="${actionable}" data-mine="${mine}" data-bookable="${bookable}" style="${actionable?'':'cursor:default;opacity:.75;'}">
             <div>
               <div class="dpi-main">${escapeHtml(mainLabel)}</div>
               <div class="dpi-sub">${subLabel}</div>
             </div>
-            <span class="badge ${ev.status}">${STATUS_LABEL[ev.status]}</span>
+            <span class="badge ${ev.status}">${mine ? STATUS_LABEL[ev.status] : proposerStatusLabel(ev)}</span>
           </div>`;
         }).join('')}
       </div>
@@ -1443,14 +1582,14 @@ function openDayPanel(dateIso, dayEvents){
   overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
   overlay.querySelector('#dpCancel').addEventListener('click', closeModal);
   const dpAddBtn = overlay.querySelector('#dpAdd');
-  if(dpAddBtn){ dpAddBtn.addEventListener('click', ()=>{ closeModal(); openModal(dateIso, null); }); }
+  if(dpAddBtn){ dpAddBtn.addEventListener('click', ()=>{ closeModal(); newProposal(dateIso); }); }
   overlay.querySelectorAll('.day-panel-item').forEach(item=>{
     item.addEventListener('click', ()=>{
       const ev = dayEvents.find(e=>e.id===item.dataset.id);
       if(!ev) return;
       if(admin){ closeModal(); openModal(ev.date, ev); return; }
       if(item.dataset.mine==='true'){ closeModal(); openModal(ev.date, ev); return; }
-      if(item.dataset.bookable==='true'){ closeModal(); openModal(ev.date, null, 'proposed'); }
+      if(item.dataset.bookable==='true'){ closeModal(); newProposal(ev.date, 'proposed'); }
       else{ showToast('This date belongs to another partner - only admins can see its details.'); }
     });
   });
@@ -1639,6 +1778,10 @@ function attachLocationAutocomplete(input){
 
 /* ---- Modal ---- */
 function openModal(dateIso, existingEvent, defaultStatus){
+  // Individuals (proposer view) use the simplified seat-application flow.
+  if(!isAdmin() && existingEvent && existingEvent.applicantType==='individual'){
+    return openIndividualModal(dateIso, existingEvent);
+  }
   if(!profile && !isAdmin()){ showLoginModal(); return; }
   // A date booked or reserved by an admin is closed to new proposals.
   // (Proposers can still open their OWN existing entry.)
@@ -1700,6 +1843,16 @@ function openModal(dateIso, existingEvent, defaultStatus){
         <label>Date</label>
         <input type="date" id="fDate" value="${dateIso}" ${readOnly?'disabled':''}>
       </div>
+      ${(admin && (!existingEvent || isOpenCohort(existingEvent))) ? `
+      <div class="field oc-admin">
+        <label>Open cohort settings <span class="oc-hint">\u2014 add a Seat capacity to open a public cohort individuals can register for</span></label>
+        <div class="oc-admin-grid">
+          <input type="text" id="fVenue" data-loc-autocomplete="1" autocomplete="off" placeholder="Venue - start typing to search any place" value="${existingEvent && existingEvent.location ? escapeAttr(existingEvent.location) : ''}">
+          <input type="text" id="fTime" placeholder="Time (e.g. 10:00 AM \u2013 1:00 PM)" value="${existingEvent && existingEvent.time ? escapeAttr(existingEvent.time) : ''}">
+          <input type="number" min="1" step="1" id="fCapacity" placeholder="Seat capacity (e.g. 30)" value="${existingEvent && existingEvent.capacity!=null && existingEvent.capacity!=='' ? existingEvent.capacity : ''}">
+        </div>
+        ${existingEvent && isOpenCohort(existingEvent) ? `<div class="oc-occ">${occupiedSeats(existingEvent.date)} of ${capacityNum(existingEvent)} seats filled \u00B7 ${Math.max(0,capacityNum(existingEvent)-occupiedSeats(existingEvent.date))} available</div>` : ''}
+      </div>` : ''}
       ${adminCanEditDetails ? `<div class="lock-note" style="text-align:left;">This date has passed. As admin you can correct the proposer's details below - including their name and the number of participants trained. Your changes are logged.</div>` : ''}
       ${(admin && !adminCanEditDetails) ? '' : `
       <div class="field">
@@ -1740,9 +1893,9 @@ function openModal(dateIso, existingEvent, defaultStatus){
     </div>`;
   document.body.appendChild(overlay);
 
-  // Turn the location field into a worldwide, type-anything search.
-  const locInput = overlay.querySelector('[data-loc-autocomplete]');
-  if(locInput) attachLocationAutocomplete(locInput);
+  // Turn every location field (venue + location) into a worldwide,
+  // type-anything, Google-Maps-style search.
+  overlay.querySelectorAll('[data-loc-autocomplete]').forEach(attachLocationAutocomplete);
 
   let selectedStatus = currentStatus;
   overlay.querySelectorAll('.status-opt').forEach(opt=>{
@@ -1794,6 +1947,15 @@ function openModal(dateIso, existingEvent, defaultStatus){
         const pn = parseInt(participantsVal, 10);
         participantsVal = (isNaN(pn) || pn < 0) ? '' : pn;
       }
+      // Open cohort settings (admin): venue -> location, plus time & seat capacity.
+      const vEl=q('#fVenue'), tmEl=q('#fTime'), capEl=q('#fCapacity');
+      const venueVal = vEl ? vEl.value.trim() : '';
+      let timeVal = tmEl ? tmEl.value.trim() : (existingEvent && existingEvent.time!=null ? existingEvent.time : '');
+      let capacityVal = capEl ? capEl.value.trim() : (existingEvent && existingEvent.capacity!=null ? existingEvent.capacity : '');
+      if(capacityVal !== ''){ const cn = parseInt(capacityVal, 10); capacityVal = (isNaN(cn) || cn < 0) ? '' : cn; }
+      let locationVal2 = locationVal, titleVal2 = titleVal;
+      if(admin && vEl && venueVal){ locationVal2 = venueVal; }
+      if(admin && capacityVal!=='' && !titleVal2){ titleVal2 = 'Open Cohort'; }
       const errEl = q('#formErr');
 
       if(!dateVal || !selectedStatus){
@@ -1819,10 +1981,11 @@ function openModal(dateIso, existingEvent, defaultStatus){
       if(editingId){
         const ev = events.find(e=>e.id===editingId);
         if(ev){
-          ev.date = dateVal; ev.status = finalStatus; ev.title = titleVal;
-          ev.location = locationVal; ev.proposedBy = proposerVal;
+          ev.date = dateVal; ev.status = finalStatus; ev.title = titleVal2;
+          ev.location = locationVal2; ev.proposedBy = proposerVal;
           ev.contact = contactVal; ev.notes = notesVal;
           if(ptEl) ev.participants = participantsVal;   // only overwrite when the field was shown
+          if(admin && capEl){ ev.time = timeVal; ev.capacity = capacityVal; }
           ev.updatedAt = nowIso;
           // Audit trail: record which admin made this change (and the status set).
           if(admin){
@@ -1837,9 +2000,10 @@ function openModal(dateIso, existingEvent, defaultStatus){
         }
       }else{
         saved = {
-          id: uid(), date: dateVal, status: finalStatus, title: titleVal,
-          location: locationVal, proposedBy: proposerVal, contact: contactVal,
+          id: uid(), date: dateVal, status: finalStatus, title: titleVal2,
+          location: locationVal2, proposedBy: proposerVal, contact: contactVal,
           notes: notesVal, participants: participantsVal,
+          time: (admin ? timeVal : ''), capacity: (admin ? capacityVal : ''),
           ownerId: profile ? profile.userId : null,
           createdAt: nowIso
         };
@@ -1878,7 +2042,9 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     const tab = btn.dataset.tab;
     document.getElementById('calTab').style.display = tab==='cal' ? 'block' : 'none';
     document.getElementById('listTab').style.display = tab==='list' ? 'block' : 'none';
+    { const _mt=document.getElementById('masterTab'); if(_mt) _mt.style.display = tab==='master' ? 'block' : 'none'; }
     if(tab==='list') renderList();
+    if(tab==='master'){ initMasterListeners(); renderMaster(); }
   });
 });
 document.getElementById('prevMonth').addEventListener('click', ()=>{
@@ -1895,7 +2061,7 @@ document.getElementById('todayBtn').addEventListener('click', ()=>{
 });
 document.getElementById('addBtn').addEventListener('click', ()=>{
   const todayIso = fmtDate(new Date());
-  openModal(todayIso, null);
+  newProposal(todayIso);
 });
 
 document.getElementById('exportBtn').addEventListener('click', ()=>{
@@ -1926,7 +2092,541 @@ document.getElementById('exportBtn').addEventListener('click', ()=>{
   showToast('Excel file downloaded \u2014 save it into your OneDrive folder to keep it synced.');
 });
 
+
+/* =====================================================================
+   ADDED FEATURES  -  open cohorts, individual seat applications,
+   open-cohort dashboard, and the admin-only master dashboard.
+   All additive: existing behaviour is unchanged.
+   ===================================================================== */
+
+/* ---- Open-cohort + individual helpers ---- */
+function capacityNum(ev){ const n = ev ? parseInt(ev.capacity, 10) : NaN; return (isNaN(n) || n < 0) ? 0 : n; }
+function isIndividual(ev){ return !!ev && ev.applicantType === 'individual'; }
+function isOpenCohort(ev){ return !!ev && ev.applicantType !== 'individual' && capacityNum(ev) > 0; }
+function occupiedSeats(dateIso, evs){
+  evs = evs || events;
+  return evs.filter(e => isIndividual(e) && e.status !== 'cancelled' && ((e.cohortDate || e.date) === dateIso)).length;
+}
+function openCohortForDate(dateIso, evs){
+  evs = evs || events;
+  return evs.find(e => isOpenCohort(e) && e.date === dateIso && e.status !== 'cancelled') || null;
+}
+function seatsInfo(container){
+  const cap = capacityNum(container);
+  const occ = occupiedSeats(container.date);
+  return { capacity: cap, occupied: occ, available: Math.max(0, cap - occ) };
+}
+function hasConfirmedSeat(){
+  return !!(profile && events.some(e => isIndividual(e) && e.ownerId === profile.userId && e.seatConfirmed && e.status !== 'cancelled'));
+}
+/* Proposer-facing label: an admin-published open cohort reads as
+   "Open cohort" to proposers rather than the raw "Available" status. */
+function proposerStatusLabel(ev){ return isOpenCohort(ev) ? 'Open cohort' : STATUS_LABEL[ev.status]; }
+
+/* Normalise a credential (email / phone / name) for matching. */
+function normId(s){ return String(s||'').trim().toLowerCase().replace(/\s+/g,''); }
+
+/* Small stable hash so the SAME name + contact always map to the SAME
+   identity on any device - this is what lets a proposer sign back in with
+   the same credentials and see the dates they proposed and their status. */
+function stableId(str){
+  let h = 5381;
+  const s = String(str||'');
+  for(let i=0;i<s.length;i++){ h = ((h<<5) + h + s.charCodeAt(i)) >>> 0; }
+  return h.toString(36);
+}
+
+/* Has THIS person (by identity, email or phone) already taken a seat in ANY
+   open cohort? Guards "one open cohort per person" even across devices. */
+function personAlreadyHasSeat(email, phone, exceptId){
+  const e2 = normId(email), p2 = normId(phone);
+  const myId = profile ? profile.userId : null;
+  return events.some(e=>{
+    if(!isIndividual(e) || e.status==='cancelled') return false;
+    if(exceptId && e.id===exceptId) return false;
+    if(myId && e.ownerId===myId) return true;
+    if(e2 && normId(e.email)===e2) return true;
+    if(p2 && normId(e.phone||e.contact)===p2) return true;
+    return false;
+  });
+}
+
+/* ---- Entry point for a proposer starting a NEW proposal ---- */
+function newProposal(dateIso, defaultStatus){
+  if(isAdmin()){ openModal(dateIso, null, defaultStatus); return; }
+  if(!profile){ showLoginModal(); return; }
+  // Open cohorts published by an admin are individual-only: a proposer can
+  // only register for a seat, so skip the individual/institution chooser.
+  if(openCohortForDate(dateIso)){ openIndividualModal(dateIso, null); return; }
+  chooseProposerType(dateIso, defaultStatus);
+}
+
+/* ---- Ask: are you applying as an individual or an institution? ---- */
+function chooseProposerType(dateIso, defaultStatus){
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay'; overlay.id = 'modalOverlay';
+  const container = openCohortForDate(dateIso);
+  const si = container ? seatsInfo(container) : null;
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:440px;">
+      <h3>How are you applying? \u00B7 ${niceDate(dateIso)}</h3>
+      ${container ? `<div class="oc-info"><b>Open cohort</b> \u00B7 ${escapeHtml(container.location||'Venue TBC')}${container.time?(' \u00B7 '+escapeHtml(container.time)):''}${si?(' \u00B7 '+si.available+' of '+si.capacity+' seats open'):''}</div>` : ''}
+      <p class="intro" style="margin:-2px 0 14px;color:var(--charcoal-soft);font-size:13px;">Individuals register for a single seat; institutions propose a cohort for their group.</p>
+      <div class="type-choose">
+        <div class="type-opt" id="typeInd">
+          <div class="ti">\u{1F9D1}</div><div class="tt">Individual</div>
+          <div class="ts">Register yourself for a seat. Name &amp; phone only.</div>
+        </div>
+        <div class="type-opt" id="typeInst">
+          <div class="ti">\u{1F3E2}</div><div class="tt">Institution</div>
+          <div class="ts">Propose a cohort for your organisation\u2019s group.</div>
+        </div>
+      </div>
+      <div class="modal-actions"><div></div><div><button class="btn btn-ghost" id="typeCancel">Cancel</button></div></div>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+  overlay.querySelector('#typeCancel').addEventListener('click', closeModal);
+  overlay.querySelector('#typeInd').addEventListener('click', ()=>{
+    // These plain available dates are for institutions. Individuals register
+    // for a seat on an OPEN COHORT slot, so send them there with a disclaimer
+    // instead of opening an individual application here.
+    const modal = overlay.querySelector('.modal');
+    modal.innerHTML = `
+      <h3>Applying as an individual? \u00B7 ${niceDate(dateIso)}</h3>
+      <div class="disclaimer" style="margin-bottom:14px;">
+        If you are willing to apply as an <b>individual</b>, please look at the
+        <b>open cohort</b> slots and book your seat there. These available dates
+        are for <b>institutions</b>.
+      </div>
+      <p class="intro" style="margin:-2px 0 14px;color:var(--charcoal-soft);font-size:13px;">
+        Open cohort slots show a live seat count you can register against. This date
+        is open for an institution to propose a cohort for its own group.</p>
+      <div class="modal-actions"><div></div><div style="display:flex;gap:8px;">
+        <button class="btn btn-ghost" id="discBack">Back</button>
+        <button class="btn btn-primary" id="discClose">Got it</button>
+      </div></div>`;
+    modal.querySelector('#discBack').addEventListener('click', ()=>{ closeModal(); chooseProposerType(dateIso, defaultStatus); });
+    modal.querySelector('#discClose').addEventListener('click', closeModal);
+  });
+  overlay.querySelector('#typeInst').addEventListener('click', ()=>{ closeModal(); openModal(dateIso, null, defaultStatus); });
+}
+
+/* ---- Individual seat application (name + phone; live seats; confirm/edit) ---- */
+function openIndividualModal(dateIso, existingEvent){
+  if(!profile){ showLoginModal(); return; }
+  const container = openCohortForDate(dateIso);
+  const isView = !!existingEvent;   // their own confirmed seat -> read-only
+
+  if(!existingEvent){
+    if(isPastDate(dateIso)){ showToast('This date has passed and is closed for applications.'); return; }
+    if(hasConfirmedSeat()){ showToast('You have already confirmed a seat in an open cohort, so you can\u2019t apply to another.'); return; }
+    if(container){
+      const s = seatsInfo(container);
+      if(s.available <= 0){ showToast('This open cohort is full \u2014 no seats left.'); return; }
+    }
+    const alreadyMine = events.some(e => e.date===dateIso && ownsEvent(e) && !isOpenCohort(e));
+    if(alreadyMine){ showToast('You have already applied for this date.'); return; }
+  }
+
+  modalDate = dateIso;
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay'; overlay.id = 'modalOverlay';
+  const si = container ? seatsInfo(container) : null;
+  const nm = existingEvent ? (existingEvent.proposedBy || '') : (profile && profile.name ? profile.name : '');
+  const ph = existingEvent ? (existingEvent.phone || existingEvent.contact || '') : (profile && profile.contact ? profile.contact : '');
+  const nt = existingEvent ? (existingEvent.notes || '') : '';
+  const em = existingEvent ? (existingEvent.email || '') : (profile && profile.contact && profile.contact.includes('@') ? profile.contact : '');
+  const cohortInfo = container
+    ? `<div class="oc-details">
+         <div class="ocd-row"><span class="ocd-k">Venue:</span><span class="ocd-v">${escapeHtml(container.location||'To be confirmed')}</span></div>
+         ${container.time ? `<div class="ocd-row"><span class="ocd-k">Time:</span><span class="ocd-v">${escapeHtml(container.time)}</span></div>` : ''}
+       </div>`
+    : '';
+  const seatsHtml = si ? `<div class="seats-banner">
+      <div class="seats-top">
+        <span class="seats-num${si.available<=0?' full':''}">${si.available}</span>
+        <span class="seats-cap">seats available \u00B7 ${si.occupied} of ${si.capacity} filled</span>
+      </div>
+      <div class="seats-meta">Seats update live as people confirm.</div>
+      <div class="seats-bar"><div class="fill" style="width:${si.capacity?Math.min(100,si.occupied/si.capacity*100):0}%"></div></div>
+    </div>` : '';
+
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${isView?'Your seat':'Apply as an individual'} \u00B7 ${niceDate(dateIso)}</h3>
+      ${cohortInfo}
+      ${seatsHtml}
+      ${isView ? `
+        <div class="confirm-sum">
+          <div class="cs-row"><span class="cs-k">Name</span><span>${escapeHtml(nm)}</span></div>
+          <div class="cs-row"><span class="cs-k">Phone</span><span>${escapeHtml(ph)}</span></div>
+          ${em?`<div class="cs-row"><span class="cs-k">Email</span><span>${escapeHtml(em)}</span></div>`:''}
+          ${nt?`<div class="cs-row"><span class="cs-k">Notes</span><span>${escapeHtml(nt)}</span></div>`:''}
+          <div class="cs-row"><span class="cs-k">Status</span><span><span class="badge ${existingEvent.status}">${STATUS_LABEL[existingEvent.status]}</span></span></div>
+        </div>
+        <div class="disclaimer">Your seat is confirmed and locked \u2014 you can\u2019t edit it or apply for another open cohort. Contact the NAAMII team if something needs to change.</div>
+        <div class="modal-actions"><div></div><div><button class="btn btn-ghost" id="indClose">Close</button></div></div>
+      ` : `
+        <div id="indForm">
+          <div class="field"><label>Full name <span style="color:var(--red)">*</span></label>
+            <input type="text" id="indName" placeholder="e.g. Sita Sharma" value="${escapeAttr(nm)}"></div>
+          <div class="field"><label>Phone number <span style="color:var(--red)">*</span></label>
+            <input type="tel" id="indPhone" placeholder="e.g. 98XXXXXXXX" value="${escapeAttr(ph)}"></div>
+          <div class="field"><label>Email address <span style="color:var(--red)">*</span></label>
+            <input type="email" id="indEmail" placeholder="e.g. name@example.com" value="${escapeAttr(em)}"></div>
+          <div class="field"><label>Notes (optional)</label>
+            <textarea id="indNotes" placeholder="Anything the team should know...">${nt?escapeHtml(nt):''}</textarea></div>
+          <div class="err" id="indErr">Please enter your name, phone number and a valid email address.</div>
+          <div class="modal-actions"><div></div><div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" id="indCancel">Cancel</button>
+            <button class="btn btn-primary" id="indSubmit">Submit application</button>
+          </div></div>
+        </div>
+        <div id="indConfirm" style="display:none;">
+          <div class="confirm-sum" id="indSummary"></div>
+          <div class="disclaimer">Please review your details. <b>Once you confirm your seat, you can\u2019t edit it and can\u2019t apply for another open cohort.</b></div>
+          <div class="modal-actions"><div></div><div style="display:flex;gap:8px;">
+            <button class="btn btn-ghost" id="indEdit">Edit</button>
+            <button class="btn btn-primary" id="indConfirmBtn">I confirm</button>
+          </div></div>
+        </div>
+      `}
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
+  const cl = overlay.querySelector('#indClose'); if(cl) cl.addEventListener('click', closeModal);
+  const cc = overlay.querySelector('#indCancel'); if(cc) cc.addEventListener('click', closeModal);
+  if(isView) return;
+
+  const formEl = overlay.querySelector('#indForm');
+  const confEl = overlay.querySelector('#indConfirm');
+
+  overlay.querySelector('#indSubmit').addEventListener('click', ()=>{
+    const name = overlay.querySelector('#indName').value.trim();
+    const phone = overlay.querySelector('#indPhone').value.trim();
+    const email = overlay.querySelector('#indEmail').value.trim();
+    const err = overlay.querySelector('#indErr');
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if(!name || !phone || !emailOk){ err.style.display = 'block'; return; }
+    err.style.display = 'none';
+    overlay.querySelector('#indSummary').innerHTML =
+        `<div class="cs-row"><span class="cs-k">Date</span><span>${niceDate(dateIso)}</span></div>`
+      + (container ? `<div class="cs-row"><span class="cs-k">Venue</span><span>${escapeHtml(container.location||'TBC')}</span></div>` : '')
+      + (container && container.time ? `<div class="cs-row"><span class="cs-k">Time</span><span>${escapeHtml(container.time)}</span></div>` : '')
+      + `<div class="cs-row"><span class="cs-k">Name</span><span>${escapeHtml(name)}</span></div>`
+      + `<div class="cs-row"><span class="cs-k">Phone</span><span>${escapeHtml(phone)}</span></div>`
+      + `<div class="cs-row"><span class="cs-k">Email</span><span>${escapeHtml(email)}</span></div>`;
+    formEl.style.display = 'none'; confEl.style.display = '';
+  });
+  overlay.querySelector('#indEdit').addEventListener('click', ()=>{ confEl.style.display='none'; formEl.style.display=''; });
+  overlay.querySelector('#indConfirmBtn').addEventListener('click', async ()=>{
+    const name = overlay.querySelector('#indName').value.trim();
+    const phone = overlay.querySelector('#indPhone').value.trim();
+    const email = overlay.querySelector('#indEmail').value.trim();
+    const notes = overlay.querySelector('#indNotes').value.trim();
+    // Last-moment re-checks (someone may have just taken the final seat).
+    const cont = openCohortForDate(dateIso);
+    if(cont){ const s2 = seatsInfo(cont); if(s2.available <= 0){ showToast('Sorry, the last seat was just taken \u2014 this cohort is now full.'); closeModal(); renderAll(); return; } }
+    // One open cohort per person - by identity, email OR phone (works even
+    // across devices / after clearing the browser).
+    if(hasConfirmedSeat() || personAlreadyHasSeat(email, phone)){
+      showToast('You have already registered for an open cohort. Each person can register for one only.');
+      closeModal(); return;
+    }
+    const nowIso = new Date().toISOString();
+    const saved = {
+      id: uid(), date: dateIso, status: 'proposed', title: '',
+      location: cont ? (cont.location||'') : '', time: cont ? (cont.time||'') : '',
+      proposedBy: name, contact: phone + (email ? (' \u00B7 ' + email) : ''),
+      phone: phone, email: email, notes: notes, participants: '',
+      applicantType: 'individual', seatCount: 1, seatConfirmed: true,
+      cohortDate: dateIso, cohortId: cont ? cont.id : null,
+      ownerId: profile ? profile.userId : null, createdAt: nowIso
+    };
+    events.push(saved);
+    await persistEvent(saved);
+    renderAll();
+    // Success screen: "Your seat is booked" with a tick + what happens next.
+    showSeatBooked(overlay, dateIso, cont);
+  });
+}
+
+/* Success confirmation shown right after an individual confirms a seat. */
+function showSeatBooked(overlay, dateIso, container){
+  const modal = overlay.querySelector('.modal');
+  if(!modal){ closeModal(); showToast('Your seat is booked.'); return; }
+  modal.innerHTML = `
+    <div class="seat-success">
+      <div class="ss-ring">
+        <svg viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <path d="M13 24.5 L21 32 L35 16" stroke="#0E7C41" stroke-width="5"
+                stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+      <h3>Your seat is booked <span class="ss-tick">&#10003;</span></h3>
+      <div class="ss-msg">Your response is recorded for <b>${niceDate(dateIso)}</b>${container && container.location ? (' at <b>' + escapeHtml(container.location) + '</b>') : ''}.</div>
+      <div class="ss-note">You will get the information via <span class="ss-chan">&#9993; email</span> and our <span class="ss-chan">&#128172; WhatsApp community</span>.</div>
+      <div class="modal-actions"><div></div><div><button class="btn btn-primary" id="ssDone">Done</button></div></div>
+    </div>`;
+  const done = modal.querySelector('#ssDone');
+  if(done) done.addEventListener('click', ()=>{ closeModal(); });
+}
+
+/* ---- Open-cohort dashboard + combined total (admin) ---- */
+function renderOpenCohortTracker(){
+  const box = document.getElementById('openCohortTracker');
+  if(!box) return;
+  if(!isAdmin()){ box.innerHTML = ''; return; }
+
+  const containers = events.filter(isOpenCohort);
+  let trainedOpen = 0, completedOpen = 0, pipelineCohorts = 0, pipelinePeople = 0;
+  containers.forEach(c=>{
+    const occ = occupiedSeats(c.date);
+    if(c.status==='completed'){ trainedOpen += occ; completedOpen++; }
+    else if(['available','confirmed','reserved','booked'].includes(c.status)){ pipelineCohorts++; pipelinePeople += occ; }
+  });
+  let instTrained = 0;
+  events.forEach(e=>{ if(!isOpenCohort(e) && !isIndividual(e) && e.status==='completed') instTrained += participantsNum(e); });
+  const combined = instTrained + trainedOpen;
+
+  box.innerHTML = `
+    <div class="combined-hero">
+      <span class="ch-blob"></span>
+      <div class="ch-label">Total people trained \u00B7 ${escapeHtml(currentProgram.label)}</div>
+      <div class="ch-num">${combined.toLocaleString()}</div>
+      <div class="ch-sub">Standard cohorts and open cohorts combined</div>
+      <div class="ch-split">
+        <div><div class="n">${instTrained.toLocaleString()}</div><div class="l">From standard cohorts</div></div>
+        <div><div class="n">${trainedOpen.toLocaleString()}</div><div class="l">From open cohorts</div></div>
+      </div>
+    </div>
+    <div class="oc-card">
+      <span class="oc-blob"></span>
+      <h3>Open cohorts \u00B7 individual registrations</h3>
+      <div class="oc-s">Seats fill live as individuals confirm. Totals update automatically.</div>
+      <div class="oc-grid">
+        <div class="oc-stat"><div class="n">${trainedOpen.toLocaleString()}</div><div class="l">People trained from open cohorts</div></div>
+        <div class="oc-stat"><div class="n">${completedOpen.toLocaleString()}</div><div class="l">Open cohorts completed</div></div>
+        <div class="oc-stat"><div class="n">${pipelineCohorts.toLocaleString()}</div><div class="l">Open cohorts in pipeline</div></div>
+        <div class="oc-stat"><div class="n">${pipelinePeople.toLocaleString()}</div><div class="l">People in pipeline cohorts</div></div>
+      </div>
+    </div>`;
+}
+
+/* =====================================================================
+   MASTER DASHBOARD  (admin only)  -  4-year projection tracking across
+   AI Native, AI Foundation and AI Deep, with countdown to the deadline.
+   ===================================================================== */
+const MASTER_TARGETS = {
+  ai_native:     { label:'AI Native',     color:'#db0505', years:{2026:2000, 2027:7000, 2028:7000, 2029:4000} },
+  ai_foundation: { label:'AI Foundation', color:'#2E64C6', years:{2026:375,  2027:375,  2028:375,  2029:375} },
+  ai_deep:       { label:'AI Deep',       color:'#7A5AF0', years:{2026:125,  2027:125,  2028:125,  2029:125} }
+};
+const PROJECT_DEADLINE = new Date('2029-12-01T00:00:00');
+function segTotal(t){ return Object.values(t.years).reduce((a,b)=>a+b,0); }
+function sumYears(o){ return Object.values(o).reduce((a,b)=>a+b,0); }
+
+let masterEvents = { ai_native:[], ai_foundation:[], ai_deep:[] };
+let masterInited = false;
+const masterUnsubs = [];
+
+function evsForProgram(key){
+  if(key === currentProgram.key) return events;   // live current program
+  return masterEvents[key] || [];
+}
+function programAchievedByYear(evs){
+  const years = {2026:0, 2027:0, 2028:0, 2029:0};
+  evs.forEach(e=>{
+    const yr = parseInt((e.date||'').slice(0,4), 10);
+    if(!years.hasOwnProperty(yr)) return;
+    if(isOpenCohort(e)){
+      if(e.status==='completed') years[yr] += occupiedSeats(e.date, evs);
+    }else if(isIndividual(e)){
+      const hasContainer = evs.some(c => isOpenCohort(c) && c.date===e.date);
+      if(!hasContainer && e.status==='completed') years[yr] += 1;
+    }else{
+      if(e.status==='completed') years[yr] += participantsNum(e);
+    }
+  });
+  return years;
+}
+
+function initMasterListeners(){
+  if(masterInited) return;
+  masterInited = true;
+  if(firebaseConfigured()){
+    try{
+      if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      if(!db) db = firebase.firestore();
+      PROGRAMS.forEach(p=>{
+        const un = db.collection(p.collection).onSnapshot(snap=>{
+          masterEvents[p.key] = snap.docs.map(d=>Object.assign({ id:d.id }, d.data()));
+          renderMasterIfVisible();
+        }, err=>console.error('master listen', p.key, err));
+        masterUnsubs.push(un);
+      });
+      return;
+    }catch(e){ console.error('master init', e); }
+  }
+  // Offline fallback: read each program's local copy.
+  PROGRAMS.forEach(p=>{
+    try{ const raw = lsGet(STORAGE_KEY + '-' + p.key); masterEvents[p.key] = raw ? JSON.parse(raw) : []; }
+    catch(e){ masterEvents[p.key] = []; }
+  });
+}
+
+function renderMasterIfVisible(){
+  const mt = document.getElementById('masterTab');
+  if(mt && mt.style.display !== 'none' && isAdmin()) renderMaster();
+}
+
+/* ---- Small self-contained SVG chart builders (no external libraries) ---- */
+function svgRing(pct, color, size){
+  size = size || 120; const sw = 13; const r = (size - sw)/2; const c = 2*Math.PI*r;
+  const p = Math.max(0, Math.min(1, pct)); const off = c*(1-p);
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#E9EAEE" stroke-width="${sw}"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${sw}" stroke-linecap="round"
+      stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" transform="rotate(-90 ${size/2} ${size/2})"/>
+    <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central" font-size="20" font-weight="800" fill="${color}">${Math.round(p*100)}%</text>
+  </svg>`;
+}
+function svgPie(parts, size){
+  size = size || 150; const r = size/2, cx = r, cy = r;
+  const total = parts.reduce((s,p)=>s+p.value,0) || 1;
+  let a = -Math.PI/2, paths = '';
+  parts.forEach(p=>{
+    const frac = p.value/total; const a2 = a + frac*2*Math.PI;
+    if(frac > 0.999){ paths += `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${p.color}"/>`; }
+    else{
+      const x1 = cx + r*Math.cos(a), y1 = cy + r*Math.sin(a);
+      const x2 = cx + r*Math.cos(a2), y2 = cy + r*Math.sin(a2);
+      const large = frac > 0.5 ? 1 : 0;
+      paths += `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large} 1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${p.color}"/>`;
+    }
+    a = a2;
+  });
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${paths}<circle cx="${cx}" cy="${cy}" r="${(r*0.55).toFixed(1)}" fill="#fff"/></svg>`;
+}
+function barsMini(seg, targets, achieved){
+  const years = [2026,2027,2028,2029];
+  const rows = years.map(y=>{
+    const t = targets[y]||0, a = achieved[y]||0;
+    const pct = t ? Math.min(100, a/t*100) : 0;
+    return `<div>
+      <div class="bm-top"><span>${y}</span><span class="bm-y">${a.toLocaleString()} / ${t.toLocaleString()}</span></div>
+      <div class="bm-track"><div class="bm-fill" style="width:${pct.toFixed(1)}%;background:${seg.color}"></div></div>
+    </div>`;
+  }).join('');
+  return `<div class="bars-mini">${rows}</div>`;
+}
+
+let _cdTimer = null;
+function startCountdown(){
+  const tick = ()=>{
+    const dEl = document.getElementById('cdDays');
+    if(!dEl){ return; }
+    let diff = Math.max(0, PROJECT_DEADLINE - new Date());
+    const d = Math.floor(diff/86400000); diff -= d*86400000;
+    const h = Math.floor(diff/3600000);  diff -= h*3600000;
+    const m = Math.floor(diff/60000);    diff -= m*60000;
+    const s = Math.floor(diff/1000);
+    const set = (id,v,pad)=>{ const x = document.getElementById(id); if(x) x.textContent = pad ? String(v).padStart(2,'0') : String(v); };
+    set('cdDays', d, false); set('cdHours', h, true); set('cdMins', m, true); set('cdSecs', s, true);
+  };
+  tick();
+  if(_cdTimer) return;          // one interval only
+  _cdTimer = setInterval(tick, 1000);
+}
+
+function renderMaster(){
+  const box = document.getElementById('masterTab');
+  if(!box) return;
+  if(!isAdmin()){ box.innerHTML = '<div class="master-banner">The master dashboard is available to admins only.</div>'; return; }
+
+  const ach = {}, totals = {};
+  let grandA = 0, grandT = 0;
+  PROGRAMS.forEach(p=>{
+    ach[p.key] = programAchievedByYear(evsForProgram(p.key));
+    totals[p.key] = sumYears(ach[p.key]);
+    grandA += totals[p.key];
+    grandT += segTotal(MASTER_TARGETS[p.key]);
+  });
+  const pct = grandT ? Math.min(100, grandA/grandT*100) : 0;
+
+  const segCards = PROGRAMS.map(p=>{
+    const t = segTotal(MASTER_TARGETS[p.key]), a = totals[p.key], rp = t ? a/t : 0;
+    return `<div class="seg-card">
+      <h4 style="color:${MASTER_TARGETS[p.key].color}">${MASTER_TARGETS[p.key].label}</h4>
+      <div class="seg-ring">${svgRing(rp, MASTER_TARGETS[p.key].color)}</div>
+      <div class="seg-vals"><b>${a.toLocaleString()}</b> / ${t.toLocaleString()} trained</div>
+    </div>`;
+  }).join('');
+
+  const pieParts = PROGRAMS.map(p=>({ value: segTotal(MASTER_TARGETS[p.key]), color: MASTER_TARGETS[p.key].color, label: MASTER_TARGETS[p.key].label }));
+  const pieLegend = pieParts.map(pp=>`<div class="pl"><span class="sw" style="background:${pp.color}"></span>${pp.label} \u00B7 ${pp.value.toLocaleString()}</div>`).join('');
+
+  const barCards = PROGRAMS.map(p=>`<div class="chart-card">
+      <h4 style="color:${MASTER_TARGETS[p.key].color}">${MASTER_TARGETS[p.key].label} \u00B7 by year</h4>
+      ${barsMini(MASTER_TARGETS[p.key], MASTER_TARGETS[p.key].years, ach[p.key])}
+    </div>`).join('');
+
+  const years = [2026,2027,2028,2029];
+  const tRows = years.map(y=>{
+    const cells = PROGRAMS.map(p=>`<td>${(ach[p.key][y]||0).toLocaleString()} / ${(MASTER_TARGETS[p.key].years[y]||0).toLocaleString()}</td>`).join('');
+    return `<tr><td>Year ${y-2025} (${y})</td>${cells}</tr>`;
+  }).join('');
+  const totCells = PROGRAMS.map(p=>`<td>${totals[p.key].toLocaleString()} / ${segTotal(MASTER_TARGETS[p.key]).toLocaleString()}</td>`).join('');
+
+  box.innerHTML = `
+    <div class="master-wrap">
+      <div class="master-banner">Master dashboard \u00B7 admin only \u00B7 live across AI Native, AI Foundation &amp; AI Deep</div>
+
+      <div class="countdown-card">
+        <div class="cc-eyebrow">Time to project deadline</div>
+        <div class="cc-timer">
+          <div class="cd-unit"><div class="cd-num" id="cdDays">0</div><div class="cd-label">Days</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdHours">00</div><div class="cd-label">Hours</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdMins">00</div><div class="cd-label">Minutes</div></div>
+          <div class="cd-unit"><div class="cd-num" id="cdSecs">00</div><div class="cd-label">Seconds</div></div>
+        </div>
+        <div class="cc-deadline">Project deadline \u00B7 <span class="d-date">1 December 2029</span></div>
+      </div>
+
+      <div class="master-hero">
+        <div class="mh-total">
+          <div class="mh-label">Total trained across all programs</div>
+          <div class="mh-num"><em>${grandA.toLocaleString()}</em> / ${grandT.toLocaleString()}</div>
+          <div class="mh-sub">${pct.toFixed(1)}% of the 4-year target (20,000 Native \u00B7 1,500 Foundation \u00B7 500 Deep)</div>
+          <div class="mh-bar"><div class="fill" style="width:${pct.toFixed(1)}%"></div></div>
+        </div>
+        <div class="mh-pie">
+          ${svgPie(pieParts, 150)}
+          <div class="pie-legend">${pieLegend}<div class="pl" style="color:var(--charcoal-soft);font-weight:700;margin-top:4px;">Target composition</div></div>
+        </div>
+      </div>
+
+      <div class="seg-grid">${segCards}</div>
+      <div class="seg-grid">${barCards}</div>
+
+      <div class="chart-card">
+        <h4>Targets vs achieved \u00B7 year by year</h4>
+        <table class="mtable">
+          <thead><tr><th>Period</th>
+            <th style="color:${MASTER_TARGETS.ai_native.color}">AI Native</th>
+            <th style="color:${MASTER_TARGETS.ai_foundation.color}">AI Foundation</th>
+            <th style="color:${MASTER_TARGETS.ai_deep.color}">AI Deep</th></tr></thead>
+          <tbody>${tRows}<tr class="tot"><td>4-year total</td>${totCells}</tr></tbody>
+        </table>
+        <div class="bm-legend"><span>Values shown as achieved / target. Achieved updates automatically as cohorts are marked completed in any program.</span></div>
+      </div>
+    </div>`;
+  startCountdown();
+}
+
 /* ---- Init ---- */
+
 (async function init(){
   updateProgramUI();
   await loadRole();
