@@ -375,6 +375,10 @@
 
   /* ============ ADDED FEATURES: open cohorts, seats, master dashboard ============ */
   .tag-ind{display:inline-block;background:#ECE7FE;color:#5B3FC4;border-radius:5px;padding:1px 6px;font-size:10.5px;font-weight:700;}
+  /* Admin dashboard: where a proposal came from (open cohort vs available/institution) */
+  .src-tag{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:20px;white-space:nowrap;}
+  .src-tag.src-open{background:#ECE7FE;color:#5B3FC4;border:1px solid #D6CCFB;}
+  .src-tag.src-avail{background:#E3F6EC;color:#0E7C41;border:1px solid #BCE7CE;}
 
   /* Individual / Institution chooser */
   .type-choose{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:6px 0 4px;}
@@ -655,7 +659,7 @@ const USER_KEY = 'udaan-user';
    console so you can confirm at a glance that the LATEST version is live
    (if the footer shows an old number, the page is cached - hard-refresh
    with Ctrl/Cmd+Shift+R, or wait a minute for GitHub Pages to update). */
-const APP_VERSION = '2026-09-18';
+const APP_VERSION = '2026-09-18.2';
 try{ console.info('UDAAN Cohort Calendar - version ' + APP_VERSION); }catch(e){}
 
 /* =====================================================================
@@ -1593,11 +1597,12 @@ function renderList(){
   }
 
   let html = `<table class="list"><thead><tr>
-    <th>Date</th><th>Institution</th><th>Location</th><th>Status</th><th>Participants</th><th>Proposed by</th><th>Contact</th><th>Notes</th><th>Updated by</th><th></th>
+    <th>Date</th><th>Source</th><th>Institution</th><th>Location</th><th>Status</th><th>Participants</th><th>Proposed by</th><th>Contact</th><th>Notes</th><th>Updated by</th><th></th>
   </tr></thead><tbody>`;
   rows.forEach(ev=>{
     html += `<tr>
       <td>${niceDate(ev.date)}</td>
+      <td><span class="src-tag src-${proposalSource(ev)}">${proposalSourceLabel(ev)}</span></td>
       <td>${ev.title ? escapeHtml(ev.title) : (ev.applicantType==='individual' ? '<span class="tag-ind">Individual</span> ' + escapeHtml(ev.proposedBy||'') : '-')}</td>
       <td>${ev.location ? escapeHtml(ev.location) : '-'}</td>
       <td><span class="badge ${badgeClass(ev)}">${displayStatusLabel(ev)}</span>${isOpenCohort(ev) ? ('<div class="audit-cell-sub">' + seatsInfo(ev).occupied + '/' + seatsInfo(ev).capacity + ' seats' + (seatsInfo(ev).waiting ? (' &middot; ' + seatsInfo(ev).waiting + ' waiting') : '') + '</div>') : ''}</td>
@@ -2475,6 +2480,11 @@ function proposerStatusLabel(ev){
   }
   return STATUS_LABEL[ev.status];
 }
+/* Where a proposal came from, for admin tracking: an open-cohort container or
+   an individual seat/waiting-list entry counts as the OPEN COHORT side; an
+   institution proposal on an available date counts as the AVAILABLE side. */
+function proposalSource(ev){ return (isOpenCohort(ev) || isIndividual(ev)) ? 'open' : 'avail'; }
+function proposalSourceLabel(ev){ return proposalSource(ev)==='open' ? 'Open cohort' : 'Available'; }
 /* Status text that also understands waiting-list entries. */
 function displayStatusLabel(ev){ return isWaitlisted(ev) ? 'Waiting list' : (STATUS_LABEL[ev.status] || ev.status); }
 function badgeClass(ev){ return isWaitlisted(ev) ? 'waitlist' : ev.status; }
@@ -2574,8 +2584,8 @@ function stableId(str){
 
 /* Has THIS person (by identity, email or phone) already taken a seat in ANY
    open cohort? Guards "one open cohort per person" even across devices. */
-function personAlreadyHasSeat(email, phone, exceptId){
-  const e2 = normId(email), p2 = normId(phone);
+function personAlreadyHasSeat(email, phone, name, exceptId){
+  const e2 = normId(email), p2 = normId(phone), n2 = normId(name);
   const myId = profile ? profile.userId : null;
   return events.some(e=>{
     if(!isIndividual(e) || e.status==='cancelled' || e.waitlisted) return false;   // waiting-list entries hold no seat
@@ -2583,6 +2593,7 @@ function personAlreadyHasSeat(email, phone, exceptId){
     if(myId && e.ownerId===myId) return true;
     if(e2 && normId(e.email)===e2) return true;
     if(p2 && normId(e.phone||e.contact)===p2) return true;
+    if(n2 && normId(e.proposedBy)===n2) return true;   // same name also counts as the same person
     return false;
   });
 }
@@ -2757,12 +2768,13 @@ function openIndividualModal(dateIso, existingEvent, opts){
           ${em?`<div class="cs-row"><span class="cs-k">Email</span><span>${escapeHtml(em)}</span></div>`:''}
           ${nt?`<div class="cs-row"><span class="cs-k">Notes</span><span>${escapeHtml(nt)}</span></div>`:''}
           <div class="cs-row"><span class="cs-k">Status</span><span><span class="badge ${badgeClass(existingEvent)}">${displayStatusLabel(existingEvent)}</span></span></div>
+          ${(!onList && existingEvent.createdAt)?`<div class="cs-row"><span class="cs-k">Booked on</span><span>${escapeHtml(fmtStamp(existingEvent.createdAt))}</span></div>`:''}
         </div>
         ${onList
           ? `<div class="field"><label>Other open cohorts with seats</label>${otherCohortsHtml(dateIso)}</div>
              <div class="modal-actions"><div><button class="btn btn-danger" id="wlLeave">Leave waiting list</button></div><div><button class="btn btn-ghost" id="indClose">Close</button></div></div>`
-          : `<div class="disclaimer">Your seat is confirmed and locked — you can’t edit it or apply for another open cohort. Contact the NAAMII team if something needs to change.</div>
-             <div class="modal-actions"><div></div><div><button class="btn btn-ghost" id="indClose">Close</button></div></div>`}
+          : `<div class="disclaimer">You have booked your seat. To make a change you can only <b>cancel</b> your seat — you cannot edit the details or book another open cohort. If you cancel, the seat is offered to the next person on the waiting list. If this is a mistake, contact the NAAMII team.</div>
+             <div class="modal-actions"><div><button class="btn btn-danger" id="seatCancel">Cancel my seat</button></div><div><button class="btn btn-ghost" id="indClose">Close</button></div></div>`}
       </div>`;
     document.body.appendChild(overlay);
     overlay.addEventListener('click', (e)=>{ if(e.target===overlay) closeModal(); });
@@ -2772,6 +2784,19 @@ function openIndividualModal(dateIso, existingEvent, opts){
       if(!confirm('Leave the waiting list for ' + niceDate(dateIso) + '?')) return;
       await dropWaitlistEntry(existingEvent);
       closeModal(); renderAll(); showToast('You have left the waiting list.');
+    });
+    const sc = overlay.querySelector('#seatCancel');
+    if(sc) sc.addEventListener('click', async ()=>{
+      if(!confirm('Cancel your seat for ' + niceDate(dateIso) + '? You would need to book again if you change your mind.')) return;
+      existingEvent.status = 'cancelled';
+      existingEvent.seatConfirmed = false;
+      existingEvent.lastActionBy = existingEvent.proposedBy || 'Proposer';
+      existingEvent.lastActionStatus = 'cancelled';
+      existingEvent.lastActionAt = new Date().toISOString();
+      await persistEvent(existingEvent);
+      // Free seat is offered to the next person on the waiting list automatically.
+      await processWaitlist(existingEvent.cohortDate || existingEvent.date);
+      closeModal(); renderAll(); showToast('Your seat has been cancelled.');
     });
     wireAltList(overlay);
     return;
@@ -2844,8 +2869,8 @@ function openIndividualModal(dateIso, existingEvent, opts){
     const cont = openCohortForDate(dateIso);
     // One open cohort per person - by identity, email OR phone (works even
     // across devices / after clearing the browser). Waiting-list places don't count.
-    if(hasConfirmedSeat() || personAlreadyHasSeat(email, phone)){
-      showToast('You have already registered for an open cohort. Each person can register for one only.');
+    if(hasConfirmedSeat() || personAlreadyHasSeat(email, phone, name)){
+      showToast('You have already booked a seat or attended the training with these details. Each person can register once — if this is a mistake, please contact the NAAMII team.');
       closeModal(); return;
     }
     const nowIso = new Date().toISOString();
@@ -2929,11 +2954,18 @@ function showSeatBooked(overlay, dateIso, container){
       </div>
       <h3>Your seat is booked <span class="ss-tick">&#10003;</span></h3>
       <div class="ss-msg">Your response is recorded for <b>${niceDate(dateIso)}</b>${container && container.location ? (' at <b>' + escapeHtml(container.location) + '</b>') : ''}.</div>
-      <div class="ss-note">You will get the information via <span class="ss-chan">&#9993; email</span> and our <span class="ss-chan">&#128172; WhatsApp community</span>.</div>
+      <div class="ss-note">Please take a <b>screenshot</b> of this confirmation and keep it as your record that you have booked your seat.</div>
       <div class="modal-actions"><div></div><div><button class="btn btn-primary" id="ssDone">Done</button></div></div>
     </div>`;
   const done = modal.querySelector('#ssDone');
-  if(done) done.addEventListener('click', ()=>{ closeModal(); });
+  if(done) done.addEventListener('click', ()=>{
+    closeModal();
+    // Show the proposer their calendar with the seat now booked.
+    const calBtn = document.querySelector('.tab-btn[data-tab="cal"]');
+    if(calBtn) calBtn.click();
+    renderAll();
+    showToast('Your seat is booked — see your calendar.');
+  });
 }
 
 /* ---- Open-cohort dashboard + combined total (admin) ---- */
