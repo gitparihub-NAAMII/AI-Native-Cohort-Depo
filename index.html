@@ -1482,7 +1482,7 @@ const USER_KEY = 'udaan-user';
    console so you can confirm at a glance that the LATEST version is live
    (if the footer shows an old number, the page is cached - hard-refresh
    with Ctrl/Cmd+Shift+R, or wait a minute for GitHub Pages to update). */
-const APP_VERSION = '2026-10-26.19 · Final: live Firebase, admin logins, sector editor, institution list, header clock, rounded header, NAAMII tab icon';
+const APP_VERSION = '2026-10-26.20 · Final: live Firebase, admin logins, sector editor, institution list, header clock, rounded header, NAAMII tab icon, editable people numbers';
 try{ console.info('UDAAN Cohort Calendar - version ' + APP_VERSION); }catch(e){}
 
 /* =====================================================================
@@ -3470,7 +3470,7 @@ ${admin ? `      <div class="field">
           ev.province = provinceVal; ev.district = districtVal; ev.municipality = municipalityVal;
           DEMO_KEYS.forEach(k=>{ ev[k]=demoVals[k]; });
           ev.plasticUsed = plasticVal; ev.carTravel = carVal; ev.planeTravel = planeVal;
-          if(ptEl) ev.participants = participantsVal;   // only overwrite when the field was shown
+          if(ptEl){ if(admin && String(ev.participants == null ? '' : ev.participants) !== String(participantsVal)) ev.manualParticipants = true; ev.participants = participantsVal; }   // only overwrite when the field was shown; an admin's own number is not overwritten by attendance
           if(tfEl){ ev.time = timeVal; ev.timeFrom = timeFromVal; ev.timeTo = timeToVal; }
           if(admin && capEl){ ev.capacity = capacityVal; }
           if(isIndividual(ev)){ ev.cohortDate = dateVal; if(looksLikeEmail(contactVal) && !ev.email) ev.email = contactVal; }
@@ -4207,7 +4207,7 @@ function renderOpenCohortTracker(){
   const containers = events.filter(isOpenCohort);
   let trainedOpen = 0, completedOpen = 0, pipelineCohorts = 0, pipelinePeople = 0;
   containers.forEach(c=>{
-    const occ = occupiedSeats(c.date);
+    const occ = openCohortTrained(c);
     if(c.status==='completed'){ trainedOpen += occ; completedOpen++; }
     else if(['available','confirmed','reserved','booked'].includes(c.status)){ pipelineCohorts++; pipelinePeople += occ; }
   });
@@ -4266,7 +4266,7 @@ function programAchievedByYear(evs){
     const yr = parseInt((e.date||'').slice(0,4), 10);
     if(!years.hasOwnProperty(yr)) return;
     if(isOpenCohort(e)){
-      if(e.status==='completed') years[yr] += occupiedSeats(e.date, evs);
+      if(e.status==='completed') years[yr] += openCohortTrained(e, evs);
     }else if(isIndividual(e)){
       const hasContainer = evs.some(c => isOpenCohort(c) && c.date===e.date);
       if(!hasContainer && e.status==='completed' && !e.waitlisted) years[yr] += 1;
@@ -4528,8 +4528,14 @@ async function saveProjectConfig(note){
 function progEventsMap(){
   const m={}; PROGRAMS.forEach(p=> m[p.key]=evsForProgram(p.key)); return m;
 }
+/* People trained for an open cohort: the number an admin typed, otherwise the filled seats */
+function openCohortTrained(c, evs){
+  const o = c ? c.trainedOverride : null;
+  if(o !== undefined && o !== null && o !== '' && !isNaN(parseInt(o, 10))) return Math.max(0, parseInt(o, 10));
+  return occupiedSeats(c.date, evs);
+}
 function unitPeopleTrained(ev, progEvs){
-  if(isOpenCohort(ev)) return ev.status==='completed' ? occupiedSeats(ev.date, progEvs) : 0;
+  if(isOpenCohort(ev)) return ev.status==='completed' ? openCohortTrained(ev, progEvs) : 0;
   if(isIndividual(ev)) return (ev.status==='completed' && !ev.waitlisted) ? 1 : 0;
   return ev.status==='completed' ? participantsNum(ev) : 0;
 }
@@ -6087,7 +6093,7 @@ async function trkApplyAttendance(force){
     for(const g of m.matched){
       const ev = g.ev; touched.add(g.prog + '|' + ev.id);
       const { counts, groups } = trkAggregate(g.recs);
-      const keys = []; if(!isOpenCohort(ev)) keys.push('participants');
+      const keys = []; if(!isOpenCohort(ev) && !ev.manualParticipants) keys.push('participants');
       groups.forEach(gr=>TRK_GROUPS[gr].forEach(k=>keys.push(k)));
       const diff = keys.some(k=>String(ev[k] == null ? '' : ev[k]) !== String(counts[k])) || ev.attendanceCount !== counts.participants;
       const complete = trkConfig.autoComplete && ['booked','reserved','confirmed'].includes(ev.status) && ev.date <= today;
@@ -6105,7 +6111,7 @@ async function trkApplyAttendance(force){
       for(const ev of (evsForProgram(p.key) || []).slice()){
         if(!ev || ev.attendanceCount == null || touched.has(p.key + '|' + ev.id)) continue;
         const b = ev.attendanceBackup || {};
-        Object.keys(b).forEach(k=>{ if(k !== 'status') ev[k] = b[k]; });
+        Object.keys(b).forEach(k=>{ if(k !== 'status' && !(k === 'participants' && ev.manualParticipants)) ev[k] = b[k]; });
         if(b.status && ev.status === 'completed' && String(ev.lastActionBy || '').indexOf('Attendance sync') === 0) ev.status = b.status;
         delete ev.attendanceCount; delete ev.attendanceBackup; delete ev.attendanceSyncedAt;
         ev.lastActionBy = who; ev.lastActionStatus = ev.status; ev.lastActionAt = now; ev.updatedAt = now;
@@ -8946,7 +8952,7 @@ function countingBreakdown(){
   if(typeof events === 'undefined') return '';
   var inst = 0, open = 0, ind = 0;
   events.forEach(function(e){
-    if(typeof isOpenCohort === 'function' && isOpenCohort(e)){ if(e.status === 'completed') open += occupiedSeats(e.date); }
+    if(typeof isOpenCohort === 'function' && isOpenCohort(e)){ if(e.status === 'completed') open += openCohortTrained(e); }
     else if(typeof isIndividual === 'function' && isIndividual(e)){ if(e.status === 'completed' && !e.waitlisted && !openCohortForDate(e.date)) ind += 1; }
     else if(e.status === 'completed') inst += participantsNum(e);
   });
@@ -8962,7 +8968,7 @@ function countAuditRows(progKey){
       var counted = 0, why = '', kind = 'Institution cohort';
       if(typeof isOpenCohort === 'function' && isOpenCohort(e)){
         kind = 'Open cohort';
-        if(e.status === 'completed'){ counted = occupiedSeats(e.date, evs); why = counted ? 'Filled seats' : 'Completed but no seats were booked'; }
+        if(e.status === 'completed'){ counted = openCohortTrained(e, evs); why = (e.trainedOverride != null && e.trainedOverride !== '') ? 'Number set by an admin' : (counted ? 'Filled seats' : 'Completed but no seats were booked'); }
         else why = 'Not counted \u2014 status is ' + (STATUS_LABEL[e.status] || e.status) + ', only Completed counts';
       }else if(typeof isIndividual === 'function' && isIndividual(e)){
         kind = e.waitlisted ? 'Waiting list' : 'Individual seat';
@@ -10703,5 +10709,176 @@ try{ console.info('UDAAN add-on patch 13 (2026-10-26n) loaded'); }catch(e){}
   body.is-scrolled header.top.udaan-bar{ box-shadow:0 12px 28px -14px rgba(31,36,44,.40); }
   @media(max-width:600px){ header.top.udaan-bar{ top:0; padding:10px 12px; border-radius:12px; } }
 </style>
+
+<!-- =====================================================================
+     UDAAN add-on patch 15  (2026-10-26o)
+     Project Tracking > Edit numbers
+       Admins can change the number of people for any cohort, including
+       cohorts booked by proposers. The number is saved to the calendar and
+       every screen that counts people (Dashboard, Master, Project Tracking,
+       reports, maps) follows at once. A number set here is not overwritten
+       by the attendance sync; "Back to attendance" hands it over again.
+     ===================================================================== -->
+<style id="udaan-addon15-css">
+  .en-num{ width:84px; border:1px solid var(--line); background:var(--cream); border-radius:8px; padding:6px 8px; font:inherit; font-size:13px; color:var(--charcoal); text-align:right; font-variant-numeric:tabular-nums; }
+  .en-num.changed{ border-color:var(--confirmed); box-shadow:0 0 0 3px var(--confirmed-bg); }
+  .en-tag{ display:inline-block; font-size:10.5px; font-weight:800; padding:2px 7px; border-radius:20px; background:var(--proposed-bg); color:var(--proposed-ink); white-space:nowrap; }
+  .en-bar{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:4px 0 12px; }
+  .en-act{ white-space:nowrap; text-align:right; }
+  .en-zero{ color:var(--coolgrey); }
+</style>
+<script>
+(function(){
+"use strict";
+function e$(s){ return (typeof escapeHtml === 'function') ? escapeHtml(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+function ea(s){ return (typeof escapeAttr === 'function') ? escapeAttr(String(s == null ? '' : s)) : String(s == null ? '' : s); }
+function nz(n){ return (Number(n) || 0).toLocaleString(); }
+
+/* menu entry, right after Participants */
+(function(){
+  if(typeof PT_NAV === 'undefined') return;
+  if(PT_NAV.some(function(n){ return n.k === 'editnums'; })) return;
+  var i = PT_NAV.findIndex(function(n){ return n.k === 'participants'; });
+  PT_NAV.splice(i < 0 ? PT_NAV.length : i + 1, 0, { k: 'editnums', ic: '\u270F\uFE0F', label: 'Edit numbers' });
+})();
+
+function findEv(prog, id){ return (evsForProgram(prog) || []).find(function(e){ return e && e.id === id; }); }
+function currentValue(ev, u){
+  if(isOpenCohort(ev)) return (ev.trainedOverride !== undefined && ev.trainedOverride !== null && ev.trainedOverride !== '') ? parseInt(ev.trainedOverride, 10) || 0 : occupiedSeats(ev.date, evsForProgram(u.prog));
+  return participantsNum(ev);
+}
+function rowsFor(){
+  var units = applyFilters(buildUnits());
+  return units.filter(function(u){ return (u.kind === 'inst' || u.kind === 'open') && u.date; })
+    .sort(function(a, b){ return String(b.date).localeCompare(String(a.date)); })
+    .map(function(u){ var ev = findEv(u.prog, u.id); return ev ? { u: u, ev: ev, val: currentValue(ev, u) } : null; })
+    .filter(Boolean);
+}
+
+async function saveNumber(prog, id, value, markDone){
+  var ev = findEv(prog, id); if(!ev) throw new Error('Cohort not found');
+  var n = Math.max(0, parseInt(value, 10) || 0), now = new Date().toISOString(), who = (typeof adminName !== 'undefined' && adminName) || 'Admin';
+  var before = currentValue(ev, { prog: prog });
+  if(isOpenCohort(ev)) ev.trainedOverride = n;
+  else { ev.participants = n; ev.manualParticipants = true; }
+  if(markDone && ev.status !== 'completed'){ ev.status = 'completed'; if(!ev.completedAt) ev.completedAt = now; }
+  ev.history = Array.isArray(ev.history) ? ev.history : [];
+  ev.history.push({ by: who, status: ev.status, at: now });
+  ev.lastActionBy = who; ev.lastActionStatus = ev.status; ev.lastActionAt = now; ev.updatedAt = now;
+  await persistEventToProgram(prog, ev);
+  try{ trkAddLog('numbers', 'People changed for ' + (ev.title || 'cohort') + ' (' + ev.date + '): ' + before + ' \u2192 ' + n + '.'); }catch(e){}
+  return { before: before, after: n };
+}
+async function backToAttendance(prog, id){
+  var ev = findEv(prog, id); if(!ev) return;
+  var now = new Date().toISOString(), who = (typeof adminName !== 'undefined' && adminName) || 'Admin';
+  delete ev.manualParticipants;
+  if(ev.attendanceCount != null) ev.participants = ev.attendanceCount;
+  ev.lastActionBy = who; ev.lastActionStatus = ev.status; ev.lastActionAt = now; ev.updatedAt = now;
+  await persistEventToProgram(prog, ev);
+}
+async function clearOverride(prog, id){
+  var ev = findEv(prog, id); if(!ev) return;
+  var now = new Date().toISOString(), who = (typeof adminName !== 'undefined' && adminName) || 'Admin';
+  delete ev.trainedOverride; ev.lastActionBy = who; ev.lastActionAt = now; ev.updatedAt = now;
+  await persistEventToProgram(prog, ev);
+}
+function refreshAll(){
+  try{ renderAll(); }catch(e){}
+  try{ renderMasterIfVisible(); }catch(e){}
+  try{ renderTracking(); }catch(e){}
+}
+
+function pageHtml(){
+  var rows = rowsFor();
+  var totalCounted = 0; rows.forEach(function(r){ totalCounted += r.u.trained; });
+  var body = rows.map(function(r, i){
+    var u = r.u, ev = r.ev, open = isOpenCohort(ev), manual = open ? (ev.trainedOverride !== undefined && ev.trainedOverride !== null && ev.trainedOverride !== '') : !!ev.manualParticipants;
+    var done = u.status === 'completed';
+    var counted = u.trained;
+    return '<tr data-en-row="' + i + '" data-prog="' + ea(u.prog) + '" data-id="' + ea(u.id) + '">'
+      + '<td>' + e$(typeof trkShort === 'function' ? trkShort(u.date) : u.date) + '</td>'
+      + '<td><span style="color:' + trkProgColor(u.prog) + ';font-weight:700;">' + e$(u.progLabel) + '</span></td>'
+      + '<td>' + e$(u.institution || (open ? 'Open cohort' : '\u2014')) + (open ? ' <span class="en-tag" title="People trained = filled seats unless you set a number">open cohort</span>' : '') + '</td>'
+      + '<td><span class="badge ' + e$(u.status) + '">' + e$(STATUS_LABEL[u.status] || u.status) + '</span></td>'
+      + '<td class="num ' + (counted ? '' : 'en-zero') + '">' + nz(counted) + '</td>'
+      + '<td class="num"><input type="number" class="en-num" min="0" step="1" value="' + r.val + '" data-orig="' + r.val + '" aria-label="People for ' + ea(u.institution || 'cohort') + '"></td>'
+      + '<td>' + (done ? '<span class="sub" style="margin:0">Completed</span>' : '<label class="ptx-check" style="max-width:none;"><input type="checkbox" class="en-done"> Mark completed</label>') + '</td>'
+      + '<td class="en-act">' + (manual ? '<span class="en-tag">set by admin</span> ' : '') + '<button type="button" class="btn-mini go" data-en-save>Save</button>'
+      + (manual ? ' <button type="button" class="btn-mini" data-en-reset title="' + (open ? 'Go back to the number of filled seats' : 'Let attendance set this number again') + '">' + (open ? 'Back to seats' : 'Back to attendance') + '</button>' : '') + '</td></tr>';
+  }).join('');
+  var f = trackState.filters, countedProgs = (typeof TRAINED_NOTE === 'string') ? TRAINED_NOTE : '';
+  return '<div class="pt-card"><h3>Edit numbers \u00B7 ' + rows.length + ' cohort' + (rows.length === 1 ? '' : 's') + '</h3>'
+    + '<div class="sub">Change the number of people for any cohort, including cohorts booked by proposers. Saving updates the calendar, the Dashboard, Master and Project Tracking at once. '
+    + 'Only cohorts marked <b>Completed</b> count as people trained, so tick <b>Mark completed</b> when you add people to a cohort that is still booked. '
+    + 'A number you set here is kept when attendance arrives; use the reset button to hand it back to attendance.</div>'
+    + '<div class="en-bar"><button type="button" class="btn btn-primary" id="enSaveAll" disabled>Save all changes</button><span class="sub" id="enHint" style="margin:0;">No changes yet.</span>'
+    + '<span class="sub" style="margin:0 0 0 auto;">Counted now across these rows: <b>' + nz(totalCounted) + '</b> people</span></div>'
+    + '<div class="pt-scroll"><table class="pt-table"><thead><tr><th>Date</th><th>Programme</th><th>Institution / cohort</th><th>Status</th><th class="num">Counted now</th><th class="num">People</th><th></th><th></th></tr></thead>'
+    + '<tbody>' + (body || '<tr><td colspan="8">No cohorts match the filters above.</td></tr>') + '</tbody></table></div>'
+    + '<div class="pt-note" style="margin-top:12px;">AI Foundation and AI Deep are counted as zero people trained until they start training, so a number saved on their cohorts is kept but does not add to the totals yet.</div></div>';
+}
+
+function wire(root){
+  var card = root.querySelector('#enPage'); if(!card) return;
+  var all = card.querySelector('#enSaveAll'), hint = card.querySelector('#enHint');
+  function dirtyRows(){
+    return Array.prototype.filter.call(card.querySelectorAll('tr[data-en-row]'), function(tr){
+      var inp = tr.querySelector('.en-num'), dn = tr.querySelector('.en-done');
+      return (inp && inp.value !== inp.dataset.orig) || (dn && dn.checked);
+    });
+  }
+  function mark(){
+    card.querySelectorAll('tr[data-en-row]').forEach(function(tr){ var i = tr.querySelector('.en-num'); i.classList.toggle('changed', i.value !== i.dataset.orig); });
+    var n = dirtyRows().length; all.disabled = n === 0; hint.textContent = n ? n + ' change' + (n === 1 ? '' : 's') + ' not saved yet.' : 'No changes yet.';
+  }
+  card.addEventListener('input', mark); card.addEventListener('change', mark);
+  async function saveTr(tr){
+    var inp = tr.querySelector('.en-num'), dn = tr.querySelector('.en-done');
+    if(inp.value === '' || isNaN(parseInt(inp.value, 10)) || parseInt(inp.value, 10) < 0) throw new Error('Enter a number of 0 or more.');
+    return saveNumber(tr.dataset.prog, tr.dataset.id, inp.value, !!(dn && dn.checked));
+  }
+  card.querySelectorAll('[data-en-save]').forEach(function(b){ b.addEventListener('click', async function(){
+    var tr = b.closest('tr'); b.disabled = true;
+    try{ var r = await saveNumber2(tr); showToast('Saved: ' + r.before + ' \u2192 ' + r.after + ' people. Dashboard, Master and Project Tracking are updated.'); refreshAll(); }
+    catch(e){ showToast(e.message || 'Could not save.'); b.disabled = false; }
+  }); });
+  async function saveNumber2(tr){ return saveTr(tr); }
+  card.querySelectorAll('tr[data-en-row] .en-num').forEach(function(inp){ inp.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); var b = inp.closest('tr').querySelector('[data-en-save]'); if(b) b.click(); } }); });
+  card.querySelectorAll('[data-en-reset]').forEach(function(b){ b.addEventListener('click', async function(){
+    var tr = b.closest('tr'), prog = tr.dataset.prog, id = tr.dataset.id, ev = findEv(prog, id); b.disabled = true;
+    try{ if(ev && isOpenCohort(ev)) await clearOverride(prog, id); else await backToAttendance(prog, id); showToast('Handed back. The number now follows ' + (ev && isOpenCohort(ev) ? 'the filled seats.' : 'attendance.')); refreshAll(); }
+    catch(e){ showToast('Could not reset.'); b.disabled = false; }
+  }); });
+  all.addEventListener('click', async function(){
+    var rows = dirtyRows(); if(!rows.length) return; all.disabled = true; var ok = 0, bad = 0;
+    for(var i = 0; i < rows.length; i++){ try{ await saveTr(rows[i]); ok++; }catch(e){ bad++; } }
+    showToast('Saved ' + ok + ' cohort' + (ok === 1 ? '' : 's') + (bad ? ', ' + bad + ' could not be saved' : '') + '. Everything is updated.'); refreshAll();
+  });
+}
+
+if(typeof renderTracking === 'function'){
+  var _rt15 = renderTracking;
+  renderTracking = function(){
+    var r = _rt15.apply(this, arguments);
+    try{
+      if(typeof trackState !== 'undefined' && trackState.page === 'editnums' && typeof isAdmin === 'function' && isAdmin()){
+        var main = document.querySelector('#trackTab .pt-main');
+        if(main){
+          var title = main.querySelector('.pt-page-title');
+          if(title) while(title.nextSibling) title.nextSibling.remove();
+          var c = document.createElement('div'); c.id = 'enPage'; c.innerHTML = pageHtml(); main.appendChild(c);
+          wire(main);
+        }
+      }
+    }catch(e){ console.warn('Edit numbers page', e); }
+    return r;
+  };
+}
+window.udaanEditNumbers = { save: saveNumber };
+try{ console.info('UDAAN add-on patch 15 (2026-10-26o) loaded'); }catch(e){}
+})();
+</script>
+
 </body>
 </html>
