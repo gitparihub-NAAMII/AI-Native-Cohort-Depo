@@ -1482,7 +1482,7 @@ const USER_KEY = 'udaan-user';
    console so you can confirm at a glance that the LATEST version is live
    (if the footer shows an old number, the page is cached - hard-refresh
    with Ctrl/Cmd+Shift+R, or wait a minute for GitHub Pages to update). */
-const APP_VERSION = '2026-10-26.20 · Final: live Firebase, admin logins, sector editor, institution list, header clock, rounded header, NAAMII tab icon, editable people numbers';
+const APP_VERSION = '2026-10-26.21 · Final: live Firebase, admin logins, sector editor, institution list, header clock, rounded header, NAAMII tab icon, editable people numbers, stable multi-admin attendance sync';
 try{ console.info('UDAAN Cohort Calendar - version ' + APP_VERSION); }catch(e){}
 
 /* =====================================================================
@@ -6082,13 +6082,34 @@ function trkScheduleApply(soon){
   if(trkApplyTimer) clearTimeout(trkApplyTimer);
   trkApplyTimer = setTimeout(()=>{ trkApplyTimer = null; trkApplyAttendance(false); }, soon ? 200 : 1500);
 }
+/* ---- only ONE admin device writes attendance into cohorts automatically ----
+   Two admin laptops with different attendance logins used to overwrite each
+   other's numbers (for example 622 and 632) over and over. The device that
+   holds the lead writes; the others only read. The lead is renewed every
+   minute and passes on by itself if that laptop is closed. */
+let trkSeenAttendance = false;
+function trkDeviceId(){ let d = lsGet('udaan-dev-id'); if(!d){ d = 'd' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); lsSet('udaan-dev-id', d); } return d; }
+async function trkClaimLead(force){
+  if(!useFirestore || !db) return true;                       // one device only: nothing to coordinate
+  try{
+    const ref = db.collection('udaan_tracking').doc('sync_lead'), me = trkWho(), dev = trkDeviceId(), now = Date.now();
+    return await db.runTransaction(async t=>{
+      const s = await t.get(ref), d = s.exists ? s.data() : null;
+      if(force || !d || (now - (d.at || 0)) > 150000 || d.dev === dev){ t.set(ref, { by:me, dev:dev, at:now }); return true; }
+      return false;
+    });
+  }catch(e){ console.warn('Attendance sync lead', e); return false; }   // when unsure, do not write
+}
+setInterval(()=>{ try{ if(typeof isAdmin === 'function' && isAdmin() && trkInited && trkConfig.autoApply) trkClaimLead(false); }catch(e){} }, 60000);
 async function trkApplyAttendance(force){
   if(!isAdmin() || (!trkConfig.autoApply && !force) || !trkApplyReady()) return 0;
   if(trkApplying){ trkApplyAgain = true; return 0; }
   trkApplying = true;
   let changed = 0, completedNow = 0, restored = 0;
   try{
+    if(!(await trkClaimLead(!!force))) return 0;               // another admin laptop is the writer right now
     const m = trkMatch(trkAllAttendance()), now = trkNowIso(), who = 'Attendance sync \u00B7 ' + trkWho(), today = fmtDate(new Date());
+    if(m.matched.length || m.unmatched.length || m.ambiguous.length) trkSeenAttendance = true;
     const touched = new Set();
     for(const g of m.matched){
       const ev = g.ev; touched.add(g.prog + '|' + ev.id);
@@ -6110,6 +6131,7 @@ async function trkApplyAttendance(force){
     for(const p of PROGRAMS){
       for(const ev of (evsForProgram(p.key) || []).slice()){
         if(!ev || ev.attendanceCount == null || touched.has(p.key + '|' + ev.id)) continue;
+        if(!force && !trkSeenAttendance) continue;                  // this device never saw the attendance: do not undo it
         const b = ev.attendanceBackup || {};
         Object.keys(b).forEach(k=>{ if(k !== 'status' && !(k === 'participants' && ev.manualParticipants)) ev[k] = b[k]; });
         if(b.status && ev.status === 'completed' && String(ev.lastActionBy || '').indexOf('Attendance sync') === 0) ev.status = b.status;
@@ -9067,11 +9089,13 @@ function renderSysStrip(){
     return '<button type="button" class="sys-chip ' + (on ? 'on' : 'off') + (act ? ' act' : '') + '" data-sys="' + key + '" title="' + escA(title) + '"' + (act ? '' : ' disabled style="cursor:default;opacity:1;"') + '>'
       + '<span class="sys-bulb" aria-hidden="true"></span>' + esc(label) + ' <span class="sys-state">' + (on ? 'ON' : 'OFF') + '</span></button>';
   }
-  host.innerHTML = '<div class="sys-strip">'
+  var sysHtml = '<div class="sys-strip">'
     + chip('count', 'Counting', s.counting, countingBreakdown() + ' Click to see cohort by cohort what is counted and what is not.', true)
     + chip('cal', 'Calendar', s.calendar, s.calendar ? 'Attendance is written into the calendar cohorts automatically. Click to turn off.' : 'Attendance is NOT written into the calendar. Click to turn on and sync now.', true)
     + chip('att', 'Attendance', s.attendance, s.attendance ? (s.responses + ' form responses, ' + s.imports + ' uploaded file(s). Click to open Attendance & Uploads.') : 'No attendance connected or uploaded yet. Click to open Attendance & Uploads.', true)
     + '</div><div class="sys-note">' + esc(countingBreakdown()) + '</div>';
+  if(host.dataset.sig === sysHtml) return;
+  host.dataset.sig = sysHtml; host.innerHTML = sysHtml;
   host.querySelectorAll('[data-sys]').forEach(function(b){
     b.addEventListener('click', function(){
       var k = b.dataset.sys;
@@ -9515,9 +9539,7 @@ function legacyConnect(){
     });
   }catch(e){ console.warn('UDAAN legacy connect', e); }
 }
-setTimeout(legacyConnect, 1500);
-setTimeout(legacyConnect, 6000);
-setTimeout(legacyConnect, 14000);
+/* legacyConnect is no longer started: the page connects through Firebase sign-in and reads the private half too */
 try{ console.info('UDAAN add-on patch 2 (2026-10-26b) loaded'); }catch(e){}
 })();
 </script>
@@ -9728,6 +9750,7 @@ var SNAP = [{"id":"snap001","date":"2026-07-26","status":"completed","title":"Su
 function nativeKey(){ return STORAGE_KEY + '-ai_native'; }
 function seedNow(){
   try{
+    if(typeof firebaseConfigured === 'function' && firebaseConfigured()) return;   // live Firebase available: never show the saved snapshot
     if(typeof useFirestore !== 'undefined' && useFirestore) return;
     if(lsGet(SNAP_KEY) !== 'applied'){
       lsSet(nativeKey(), JSON.stringify(SNAP));
@@ -10880,5 +10903,20 @@ try{ console.info('UDAAN add-on patch 15 (2026-10-26o) loaded'); }catch(e){}
 })();
 </script>
 
+
+<script>
+/* UDAAN add-on patch 16 (2026-10-26p): live updates redraw Project Tracking at most about twice a second,
+   so a burst of changes from other admins can no longer make the page (or the attendance sign-in boxes) flash. */
+(function(){
+"use strict";
+if(typeof renderTrackingIfVisible !== 'function') return;
+var _rtiv16 = renderTrackingIfVisible, timer = null;
+renderTrackingIfVisible = function(){
+  if(timer) return;
+  timer = setTimeout(function(){ timer = null; try{ _rtiv16(); }catch(e){ console.warn(e); } }, 400);
+};
+try{ console.info('UDAAN add-on patch 16 (2026-10-26p) loaded'); }catch(e){}
+})();
+</script>
 </body>
 </html>
