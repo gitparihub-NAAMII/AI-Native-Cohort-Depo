@@ -1343,7 +1343,7 @@ body.cx-open{ overflow:hidden; }
     <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px;">
       <div class="tabs">
         <button class="tab-btn active" data-tab="cal">Calendar</button>
-        <button class="tab-btn" data-tab="list">Dashboard</button>
+        <button class="tab-btn" data-tab="list">Milestone monitor</button>
         <button class="tab-btn" data-tab="master" id="masterTabBtn" style="display:none;">Master</button>
         <button class="tab-btn" data-tab="track" id="trackTabBtn" style="display:none;">Project Tracking</button>
       </div>
@@ -1407,9 +1407,14 @@ body.cx-open{ overflow:hidden; }
     <div id="trainedTracker"></div>
     <div id="openCohortTracker"></div>
     <div class="stat-row" id="statRow"></div>
-    <div class="filter-row" id="filterRow"></div>
-    <div class="table-scroll" id="listWrap"><div class="loading">Loading&hellip;</div></div>
-    <button class="btn btn-ghost" id="exportBtn" style="margin-top:14px;">Export to Excel (.xlsx)</button>
+    <div class="list-toggle-bar"><button type="button" class="btn btn-ghost" id="listToggle" aria-expanded="false" aria-controls="listDetails"><span class="lt-arrow">&#9656;</span><span class="lt-text">See full details</span></button><span class="lt-sub" id="listCount"></span></div>
+    <div id="listDetails" hidden>
+      <div class="filter-row" id="filterRow"></div>
+      <div class="table-scroll" id="listWrap"><div class="loading">Loading&hellip;</div></div>
+    </div>
+    <div class="excel-row"><button class="btn btn-ghost" id="exportBtn">Export to Excel (.xlsx)</button>
+      <button type="button" class="btn btn-primary" id="excelLinkBtn">Open Excel sheet to edit &#8599;</button>
+      <button type="button" class="btn-mini" id="excelLinkSet">Set link</button></div>
     <p class="shared-note">Download the full record, then save or drag it into your OneDrive folder to keep it synced there. This artifact can't write to OneDrive directly, so exporting is a manual (but one-click) step.</p>
   </div>
 
@@ -1956,7 +1961,11 @@ const LOCKED_FOR_PROPOSER = ['confirmed','completed'];
 function canEditEvent(ev){ return isAdmin() || (ownsEvent(ev) && !LOCKED_FOR_PROPOSER.includes(ev && ev.status)); }
 function canDeleteEvent(ev){ return isAdmin() || (ownsEvent(ev) && !LOCKED_FOR_PROPOSER.includes(ev && ev.status)); }
 // Booked slots are admin-only: proposers/users never see them.
-function roleVisibleEvents(){ return events; }
+/* Past dates that were never completed are erased from the calendar: an Available date
+   that has gone by (no green) and a Cancelled date that has gone by (no red). Completed
+   dates stay exactly as they are. Records are not deleted - they remain in the audit list. */
+function isExpiredSlot(e){ return !!e && (e.status==='available' || e.status==='cancelled') && !!e.date && isPastDate(e.date); }
+function roleVisibleEvents(){ return events.filter(e=>!isExpiredSlot(e)); }
 
 function updateRoleUI(){
   const label = document.getElementById('roleLabel');
@@ -2416,7 +2425,7 @@ function renderCalendar(){
 
 function renderStats(){
   const counts = {available:0,proposed:0,booked:0,reserved:0,confirmed:0,completed:0,cancelled:0};
-  events.forEach(e=>{ if(counts[e.status]!==undefined) counts[e.status]++; });
+  roleVisibleEvents().forEach(e=>{ if(counts[e.status]!==undefined) counts[e.status]++; });
 
   const row = document.getElementById('statRow');
   row.innerHTML = '';
@@ -2491,7 +2500,7 @@ function renderAvailability(){
   // stops being counted as available automatically, even if an older
   // "available" entry for that same date is still around.
   const byDate = {};
-  events.forEach(e=>{
+  roleVisibleEvents().forEach(e=>{
     if(!byDate[e.date]) byDate[e.date] = {};
     byDate[e.date][e.status] = true;
   });
@@ -3285,7 +3294,7 @@ ${admin ? `      <div class="field">
         <input type="number" min="1" step="1" id="fParticipants" placeholder="e.g. 30" value="${existingEvent && existingEvent.participants!=null && existingEvent.participants!=='' ? existingEvent.participants : ''}" ${readOnly?'disabled':''}>
         <div class="at-sub" style="margin-top:5px;">How many people this cohort will train. This feeds the "people trained" count once the cohort is confirmed.</div>
       </div>
-      ${admin ? demoFormHtml(existingEvent, readOnly) : ''}
+      ${''}
       <div class="field">
         <label>Notes</label>
         <textarea id="fNotes" placeholder="Any extra detail..." ${readOnly?'disabled':''}>${existingEvent && existingEvent.notes ? existingEvent.notes : ''}</textarea>
@@ -8582,8 +8591,8 @@ function srcCardHtml(){
       <div><button type="button" class="btn-mini" id="attDisconnect">Disconnect attendance app</button></div>`;
   }else{
     att = `<div class="src-stat">Attendance app not connected${trkFormRows.length ? ' \u00B7 ' + trkNum(trkFormRows.length) + ' Google Form responses' : ''}</div>
-      <div class="src-form"><input id="attUser" type="text" placeholder="Username" autocomplete="username" aria-label="Attendance app username">
-        <input id="attPass" type="password" placeholder="Password" autocomplete="current-password" aria-label="Attendance app password">
+      <div class="src-form"><input id="attUser" type="text" placeholder="Username" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore="true" aria-label="Attendance app username">
+        <input id="attPass" type="password" placeholder="Password" autocomplete="new-password" data-lpignore="true" data-1p-ignore="true" aria-label="Attendance app password">
         <button type="button" class="btn-mini go" id="attConnectBtn"${attState.busy ? ' disabled' : ''}>${attState.busy ? 'Connecting\u2026' : 'Connect'}</button></div>
       <p class="src-desc">Use the admin sign-in of the attendance app (AI Workshop Attendance).</p>
       ${attState.error ? '<div class="ptx-err">' + escapeHtml(attState.error) + '</div>' : ''}`;
@@ -10832,7 +10841,7 @@ function pageHtml(){
   }).join('');
   var f = trackState.filters, countedProgs = (typeof TRAINED_NOTE === 'string') ? TRAINED_NOTE : '';
   return '<div class="pt-card"><h3>Edit numbers \u00B7 ' + rows.length + ' cohort' + (rows.length === 1 ? '' : 's') + '</h3>'
-    + '<div class="sub">Change the number of people for any cohort, including cohorts booked by proposers. Saving updates the calendar, the Dashboard, Master and Project Tracking at once. '
+    + '<div class="sub">Change the number of people for any cohort, including cohorts booked by proposers. Saving updates the calendar, the Milestone monitor, Master and Project Tracking at once. '
     + 'Only cohorts marked <b>Completed</b> count as people trained, so tick <b>Mark completed</b> when you add people to a cohort that is still booked. '
     + 'A number you set here is kept when attendance arrives; use the reset button to hand it back to attendance.</div>'
     + '<div class="en-bar"><button type="button" class="btn btn-primary" id="enSaveAll" disabled>Save all changes</button><span class="sub" id="enHint" style="margin:0;">No changes yet.</span>'
@@ -10863,7 +10872,7 @@ function wire(root){
   }
   card.querySelectorAll('[data-en-save]').forEach(function(b){ b.addEventListener('click', async function(){
     var tr = b.closest('tr'); b.disabled = true;
-    try{ var r = await saveNumber2(tr); showToast('Saved: ' + r.before + ' \u2192 ' + r.after + ' people. Dashboard, Master and Project Tracking are updated.'); refreshAll(); }
+    try{ var r = await saveNumber2(tr); showToast('Saved: ' + r.before + ' \u2192 ' + r.after + ' people. Milestone monitor, Master and Project Tracking are updated.'); refreshAll(); }
     catch(e){ showToast(e.message || 'Could not save.'); b.disabled = false; }
   }); });
   async function saveNumber2(tr){ return saveTr(tr); }
@@ -10918,5 +10927,540 @@ renderTrackingIfVisible = function(){
 try{ console.info('UDAAN add-on patch 16 (2026-10-26p) loaded'); }catch(e){}
 })();
 </script>
+
+
+<style id="udaan-addon18-css">
+  .list-toggle-bar{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin:6px 0 10px; }
+  .list-toggle-bar .lt-sub{ font-size:12.5px; color:var(--charcoal-soft); font-weight:600; }
+  #listToggle .lt-arrow{ display:inline-block; transition:transform .15s ease; margin-right:6px; }
+  #listToggle[aria-expanded="true"] .lt-arrow{ transform:rotate(90deg); }
+  .excel-row{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:10px; }
+  details.man-panel > summary{ cursor:pointer; list-style:none; display:flex; align-items:center; gap:10px; font-weight:800; font-size:15px; color:var(--ink,var(--charcoal)); }
+  details.man-panel > summary::-webkit-details-marker{ display:none; }
+  details.man-panel > summary .man-arrow{ display:inline-block; transition:transform .15s ease; }
+  details.man-panel[open] > summary .man-arrow{ transform:rotate(90deg); }
+  details.man-panel > summary .man-hint{ font-weight:600; font-size:12.5px; color:var(--charcoal-soft); }
+  .man-body{ margin-top:12px; }
+  .man-ctl{ display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end; margin:8px 0 12px; }
+  .man-ctl label{ display:flex; flex-direction:column; gap:4px; font-size:12px; font-weight:700; color:var(--charcoal-soft); }
+  .man-ctl select,.man-ctl input,.man-new input,.man-new select{ border:1px solid var(--line); background:var(--cream); border-radius:8px; padding:6px 8px; font:inherit; font-size:13px; color:var(--charcoal); }
+  tr.man-grp td{ background:var(--cream); font-size:11.5px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; color:var(--charcoal-soft); }
+  .man-foot{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; }
+  .man-new{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line); }
+</style>
+<script>
+/* UDAAN add-on patch 18 (2026-10-28)
+   1. Milestone monitor: the long list of dates is folded away behind "See full details";
+      an "Open Excel sheet" button sits under the export.
+   2. Project Tracking: every page that shows numbers gets an "Edit numbers" panel. A number typed
+      there is stored as a manual adjustment (the difference from what is counted now) in the shared
+      project settings, so every KPI, chart, map, filter and report follows it. */
+(function(){
+"use strict";
+function $(id){ return document.getElementById(id); }
+function safe(fn, d){ try{ return fn(); }catch(e){ return d; } }
+function e$(s){ return escapeHtml(String(s == null ? '' : s)); }
+function ea(s){ return escapeAttr(String(s == null ? '' : s)); }
+function nz(n){ return (Number(n) || 0).toLocaleString(); }
+
+/* ================= 1. Milestone monitor list ================= */
+var listOpen = false;
+function syncList(){
+  var d = $('listDetails'), b = $('listToggle'); if(!d || !b) return;
+  d.hidden = !listOpen;
+  b.setAttribute('aria-expanded', listOpen ? 'true' : 'false');
+  var t = b.querySelector('.lt-text'); if(t) t.textContent = listOpen ? 'Hide full details' : 'See full details';
+}
+function updateListCount(){
+  var c = $('listCount'); if(!c) return;
+  var n = safe(function(){ return events.length; }, 0);
+  c.textContent = n + ' date' + (n === 1 ? '' : 's') + ' recorded';
+}
+(function(){
+  var b = $('listToggle'); if(b) b.addEventListener('click', function(){ listOpen = !listOpen; syncList(); });
+  var _rl = renderList;
+  renderList = function(){ var r = _rl.apply(this, arguments); updateListCount(); return r; };
+  syncList(); updateListCount();
+})();
+
+/* Excel sheet link: one shared link for every admin */
+var EXCEL_KEY = 'udaan-excel-link';
+function excelUrl(){ return safe(function(){ return lsGet(EXCEL_KEY) || ''; }, ''); }
+async function loadExcelLink(){
+  try{
+    if(typeof useFirestore !== 'undefined' && useFirestore && db){
+      var s = await db.collection(TRK_COL.cfg).doc('excel_link').get();
+      if(s.exists && s.data().url) lsSet(EXCEL_KEY, s.data().url);
+    }
+  }catch(e){ /* offline or no permission: the link kept on this device is used */ }
+  updateExcelBtn();
+}
+function updateExcelBtn(){
+  var b = $('excelLinkBtn'); if(!b) return;
+  var u = excelUrl();
+  b.title = u ? 'Opens your Excel sheet in a new tab' : 'No link saved yet - you will be asked to paste it';
+  var s = $('excelLinkSet'); if(s) s.textContent = u ? 'Change link' : 'Set link';
+}
+async function saveExcelLink(){
+  var cur = excelUrl();
+  var v = prompt('Paste the link to your Excel sheet (OneDrive, SharePoint or Google Sheets).\nLeave empty to remove the link.', cur);
+  if(v === null) return false;
+  v = v.trim();
+  if(v && !/^https?:\/\//i.test(v)){ showToast('The link must start with https://'); return false; }
+  lsSet(EXCEL_KEY, v);
+  try{ await trkSave(TRK_COL.cfg, 'excel_link', { url: v, by: (typeof adminName !== 'undefined' && adminName) || 'Admin', at: new Date().toISOString() }); }catch(e){ console.warn('Excel link save', e); }
+  updateExcelBtn();
+  showToast(v ? 'Excel link saved for all admins.' : 'Excel link removed.');
+  return !!v;
+}
+(function(){
+  var b = $('excelLinkBtn'), s = $('excelLinkSet');
+  if(b) b.addEventListener('click', async function(){
+    var u = excelUrl();
+    if(!u){ if(!(await saveExcelLink())) return; u = excelUrl(); }
+    if(u) window.open(u, '_blank', 'noopener');
+  });
+  if(s) s.addEventListener('click', saveExcelLink);
+  updateExcelBtn();
+  setTimeout(loadExcelLink, 2500);
+  document.querySelectorAll('.tab-btn[data-tab="list"]').forEach(function(t){ t.addEventListener('click', loadExcelLink); });
+})();
+
+/* ================= 2. Manual numbers in Project Tracking ================= */
+if(typeof buildUnits !== 'function' || typeof renderTracking !== 'function') return;
+function cfgx(){ if(!projectConfig) projectConfig = defaultProjectConfig(); if(!Array.isArray(projectConfig.manualAdjustments)) projectConfig.manualAdjustments = []; return projectConfig; }
+
+/* keep the adjustments when settings are loaded from the database */
+var _nc18 = normalizeConfig;
+normalizeConfig = function(c){
+  var d = _nc18.apply(this, arguments);
+  d.manualAdjustments = (c && Array.isArray(c.manualAdjustments)) ? c.manualAdjustments.slice() : [];
+  return d;
+};
+if(projectConfig && !Array.isArray(projectConfig.manualAdjustments)) projectConfig.manualAdjustments = [];
+
+function unitOf(e){
+  var p = PROGRAMS.find(function(x){ return x.key === e.prog; }) || PROGRAMS[0];
+  var yr = parseInt(String(e.date || '').slice(0, 4), 10), a = e.attrs || {}, f = e.f || {}, dim = e.dim;
+  var u = { id: 'man:' + e.key, prog: p.key, progLabel: p.label, date: e.date || '', year: isNaN(yr) ? null : yr, status: 'completed', kind: 'inst', manual: true,
+    sector: dim === 'sector' ? e.value : (a.sector || ''), province: dim === 'province' ? e.value : (a.province || ''),
+    district: dim === 'district' ? e.value : (a.district || ''), municipality: dim === 'municipality' ? e.value : (a.municipality || ''),
+    cohortType: '', institutionType: '', institution: dim === 'institution' ? e.value : '', location: '',
+    trained: f.trained || 0, planned: f.trained || 0, completed: true, cancelled: false, isOpen: false, openAvailable: false, upcoming: false,
+    plasticUsed: '', carTravel: f.carTravel || 0, planeTravel: f.planeTravel || 0, changedAt: e.at || '', changedBy: e.by || 'Admin (manual)' };
+  DEMO_KEYS.forEach(function(k){ u[k] = f[k] || 0; });
+  u.female = u.women; u.male = u.men; u.youth = u.a0_17 + u.a18_24;
+  u.marginalized = MARGINALIZED_KEYS.reduce(function(s, k){ return s + (u[k] || 0); }, 0);
+  return u;
+}
+var _bu18 = buildUnits;
+buildUnits = function(){
+  var u = _bu18.apply(this, arguments);
+  var list = projectConfig && Array.isArray(projectConfig.manualAdjustments) ? projectConfig.manualAdjustments : [];
+  return list.length ? u.concat(list.map(unitOf)) : u;
+};
+/* a manual number is not a cohort: do not let it inflate cohort counts */
+var _cs18 = computeStats;
+computeStats = function(units){
+  var s = _cs18.apply(this, arguments), n = (units || []).filter(function(x){ return x.manual; }).length;
+  if(n){ s.cohortsTotal -= n; s.completed -= n; }
+  return s;
+};
+var _gu18 = groupUnits;
+groupUnits = function(units, keyFn){
+  var g = _gu18.apply(this, arguments);
+  (units || []).forEach(function(x){
+    if(!x.manual) return;
+    var k = keyFn(x) || '(Unspecified)';
+    if(g[k]){ g[k].cohorts--; if(x.completed) g[k].completed--; }
+  });
+  return g;
+};
+
+var PAGES = { sectors: 1, provinces: 1, districts: 1, municipalities: 1, institutions: 1, participants: 1, demographics: 1, overview: 1, targets: 1 };
+var manOpen = false, manProg = '', manDate = '';
+function sumBy(units, dim){ var m = {}; units.forEach(function(u){ var k = u[dim]; if(k) m[k] = (m[k] || 0) + (u.trained || 0); }); return m; }
+function attrsFrom(units, dim, name){
+  var u = units.find(function(x){ return x[dim] === name; }); if(!u) return {};
+  if(dim === 'district') return { province: u.province || '' };
+  if(dim === 'municipality') return { province: u.province || '', district: u.district || '' };
+  if(dim === 'institution') return { sector: u.sector || '', province: u.province || '', district: u.district || '' };
+  return {};
+}
+function demoGroups(){
+  return [['Gender', DEMO_GENDER], ['Age band', DEMO_AGE], ['Social inclusion (caste / ethnicity)', DEMO_ETHNIC], ['Inclusion & access', DEMO_INCLUSION], ['Job / profession', DEMO_PROF],
+    ['Going green', [['carTravel', 'Travel by car > 2h'], ['planeTravel', 'Travel by plane']]]];
+}
+function rowHtml(o){
+  var attrs = ' data-dim="' + ea(o.dim) + '" data-val="' + ea(o.value) + '" data-attrs="' + ea(JSON.stringify(o.attrs || {})) + '"' + (o.prog ? ' data-prog="' + ea(o.prog) + '"' : '');
+  return '<tr data-row="' + ea(o.dim + '|' + o.value + '|' + o.field) + '"' + attrs + '><td>' + e$(o.label) + '</td><td class="num">' + nz(o.cur) + '</td>'
+    + '<td class="num"><input type="number" class="en-num man-n" min="0" step="1" data-field="' + ea(o.field) + '" data-cur="' + o.cur + '" data-orig="' + o.cur + '" value="' + o.cur + '" aria-label="' + ea(o.label) + '"></td>'
+    + (o.tmap ? '<td class="num"><input type="number" class="en-num man-t" min="0" step="1" data-tmap="' + ea(o.tmap) + '" data-orig="' + o.tcur + '" value="' + o.tcur + '" aria-label="Target for ' + ea(o.label) + '"></td>' : '')
+    + '</tr>';
+}
+function tableHtml(firstCol, rows, withTarget, extra){
+  return '<div class="pt-scroll"><table class="pt-table"><thead><tr><th>' + e$(firstCol) + '</th><th class="num">Counted now</th><th class="num">Set to</th>' + (withTarget ? '<th class="num">Target</th>' : '') + '</tr></thead><tbody>' + rows + '</tbody></table></div>' + (extra || '');
+}
+function newRowHtml(label, dim, attrKey, attrLabel, attrOpts){
+  return '<div class="man-new" data-newdim="' + ea(dim) + '"><b style="font-size:13px;">Add ' + e$(label) + '</b>'
+    + '<input type="text" class="man-newname" placeholder="Name" aria-label="Name">'
+    + (attrKey ? (attrOpts ? '<select class="man-newattr" data-attr="' + ea(attrKey) + '"><option value="">' + e$(attrLabel) + '</option>' + attrOpts.map(function(o){ return '<option value="' + ea(o) + '">' + e$(o) + '</option>'; }).join('') + '</select>'
+                           : '<input type="text" class="man-newattr" data-attr="' + ea(attrKey) + '" placeholder="' + ea(attrLabel) + '" aria-label="' + ea(attrLabel) + '">') : '')
+    + '<input type="number" class="man-newnum" min="0" step="1" placeholder="People trained" aria-label="People trained"></div>';
+}
+function bodyFor(page, units){
+  var c = cfgx(), f = trackState.filters;
+  var simple = function(dim, title, names, tmap){
+    var sums = sumBy(units, dim), tg = c[tmap] || {};
+    var rows = names.map(function(n){ return rowHtml({ label: n, dim: dim, value: n, field: 'trained', cur: sums[n] || 0, attrs: attrsFrom(units, dim, n), tmap: tmap, tcur: tg[n] || 0 }); }).join('');
+    return tableHtml(title, rows, true, '');
+  };
+  var uniq = function(a){ return a.filter(function(x, i){ return x && a.indexOf(x) === i; }); };
+  var sortAz = function(a){ return a.slice().sort(function(x, y){ return String(x).localeCompare(String(y)); }); };
+  if(page === 'sectors') return simple('sector', 'Sector', uniq(sectorList().concat(Object.keys(sumBy(units, 'sector')))), 'sectorTargets');
+  if(page === 'provinces') return simple('province', 'Province', uniq(NEPAL_PROVINCES.concat(Object.keys(sumBy(units, 'province')))), 'provinceTargets');
+  if(page === 'districts') return simple('district', 'District', sortAz(uniq(Object.keys(sumBy(units, 'district')).concat(Object.keys(c.districtTargets || {})))), 'districtTargets')
+    + newRowHtml('a district', 'district', 'province', 'Province', NEPAL_PROVINCES);
+  if(page === 'municipalities') return simple('municipality', 'Municipality', sortAz(uniq(Object.keys(sumBy(units, 'municipality')).concat(Object.keys(c.municipalityTargets || {})))), 'municipalityTargets')
+    + newRowHtml('a municipality', 'municipality', 'district', 'District', null);
+  if(page === 'institutions'){
+    var sums = sumBy(units.filter(function(u){ return u.kind !== 'ind'; }), 'institution');
+    var rows = sortAz(Object.keys(sums)).map(function(n){ return rowHtml({ label: n, dim: 'institution', value: n, field: 'trained', cur: sums[n] || 0, attrs: attrsFrom(units, 'institution', n) }); }).join('');
+    return tableHtml('Institution', rows, false, newRowHtml('an institution', 'institution', 'sector', 'Sector', sectorList()));
+  }
+  if(page === 'overview' || page === 'targets'){
+    var st = computeStats(units);
+    var rows2 = PROGRAMS.map(function(p){ return rowHtml({ label: p.label, dim: '', value: '', field: 'trained', cur: st.byProgram[p.key] || 0, prog: p.key, attrs: {} }); }).join('');
+    var years = [2026, 2027, 2028, 2029], tby = c.targetsByProgramYear || {};
+    var grid = '<h4 style="margin:16px 0 6px;font-size:13.5px;">Yearly targets (people)</h4><div class="pt-scroll"><table class="pt-table"><thead><tr><th>Programme</th>' + years.map(function(y){ return '<th class="num">' + y + '</th>'; }).join('') + '</tr></thead><tbody>'
+      + PROGRAMS.map(function(p){ return '<tr><td>' + e$(p.label) + '</td>' + years.map(function(y){ var v = (tby[p.key] && tby[p.key][y]) || 0;
+          return '<td class="num"><input type="number" class="en-num man-pt" min="0" step="1" data-prog="' + ea(p.key) + '" data-year="' + y + '" data-orig="' + v + '" value="' + v + '" aria-label="' + ea(p.label + ' ' + y) + '"></td>'; }).join('') + '</tr>'; }).join('')
+      + '</tbody></table></div>';
+    return tableHtml('People trained by programme', rows2, false, grid);
+  }
+  /* participants + demographics */
+  var d = demoAgg(units, true), out = '';
+  if(page === 'participants') out += rowHtml({ label: 'Total people trained', dim: '', value: '', field: 'trained', cur: computeStats(units).trained, attrs: {} });
+  demoGroups().forEach(function(g){
+    if(page === 'participants' && g[0] === 'Going green') return;
+    out += '<tr class="man-grp"><td colspan="3">' + e$(g[0]) + '</td></tr>';
+    g[1].forEach(function(k){ out += rowHtml({ label: k[1], dim: '', value: '', field: k[0], cur: d[k[0]] || 0, attrs: {} }); });
+  });
+  return tableHtml('Measure', out, false, '');
+}
+var TITLES = { sectors: 'Sectors', provinces: 'Provinces', districts: 'Districts', municipalities: 'Municipalities', institutions: 'Institutions', participants: 'Participants', demographics: 'Demographics', overview: 'Overview', targets: 'Targets & Progress' };
+
+function addPanel(){
+  var main = document.querySelector('#trackTab .pt-main'); if(!main) return;
+  var old = main.querySelector('#manPanel'); if(old) old.remove();
+  if(!isAdmin() || !PAGES[trackState.page]) return;
+  var units = applyFilters(buildUnits()), c = cfgx();
+  if(!manProg) manProg = (trackState.filters.program !== 'all' ? trackState.filters.program : PROGRAMS[0].key);
+  if(!manDate) manDate = fmtDate(new Date());
+  var usesProg = !(trackState.page === 'overview' || trackState.page === 'targets');
+  var el = document.createElement('details'); el.className = 'pt-card man-panel'; el.id = 'manPanel'; if(manOpen) el.open = true;
+  el.innerHTML = '<summary><span class="man-arrow">&#9656;</span><span>&#9998;&#65039; Edit numbers &middot; ' + e$(TITLES[trackState.page]) + '</span><span class="man-hint">open to change the figures by hand</span></summary>'
+    + '<div class="man-body"><div class="sub">Type the number you want to see. The difference from what is counted now is saved as a manual adjustment, and every KPI, chart, map, filter and report in Project Tracking follows it.'
+    + (c.manualAdjustments.length ? ' <b>' + c.manualAdjustments.length + '</b> manual adjustment' + (c.manualAdjustments.length === 1 ? ' is' : 's are') + ' in place.' : '') + '</div>'
+    + (usesProg ? '<div class="man-ctl"><label>Count the change under<select id="manProg">' + PROGRAMS.map(function(p){ return '<option value="' + ea(p.key) + '"' + (p.key === manProg ? ' selected' : '') + '>' + e$(p.label) + '</option>'; }).join('') + '</select></label>'
+      + '<label>Dated<input type="date" id="manDate" value="' + ea(manDate) + '"></label></div>' : '<div class="man-ctl"><label>Dated<input type="date" id="manDate" value="' + ea(manDate) + '"></label></div>')
+    + bodyFor(trackState.page, units)
+    + '<div class="man-foot"><button type="button" class="btn btn-primary" id="manSave" disabled>Save changes</button><span class="sub" id="manHint" style="margin:0;">No changes yet.</span>'
+    + (c.manualAdjustments.length ? '<button type="button" class="btn btn-ghost" id="manClear" style="margin-left:auto;">Remove all manual adjustments</button>' : '') + '</div></div>';
+  var anchor = main.querySelector('.src-strip') || main.querySelector('.pt-page-title');
+  if(anchor) anchor.insertAdjacentElement('afterend', el); else main.appendChild(el);
+  wirePanel(el);
+}
+function wirePanel(el){
+  var save = el.querySelector('#manSave'), hint = el.querySelector('#manHint');
+  el.addEventListener('toggle', function(){ manOpen = el.open; });
+  function dirty(){
+    var n = 0;
+    el.querySelectorAll('.man-n,.man-t,.man-pt').forEach(function(i){ var ch = i.value !== i.dataset.orig; i.classList.toggle('changed', ch); if(ch) n++; });
+    el.querySelectorAll('.man-new').forEach(function(w){ if(w.querySelector('.man-newname').value.trim() && w.querySelector('.man-newnum').value !== '') n++; });
+    save.disabled = n === 0; hint.textContent = n ? n + ' change' + (n === 1 ? '' : 's') + ' not saved yet.' : 'No changes yet.';
+  }
+  el.addEventListener('input', function(e){
+    var t = e.target;
+    if(t.id === 'manProg') manProg = t.value; if(t.id === 'manDate') manDate = t.value;
+    dirty();
+  });
+  el.addEventListener('keydown', function(e){ if(e.key === 'Enter' && e.target.tagName === 'INPUT'){ e.preventDefault(); if(!save.disabled) save.click(); } });
+  save.addEventListener('click', function(){ saveAll(el, save); });
+  var clr = el.querySelector('#manClear');
+  if(clr) clr.addEventListener('click', async function(){
+    if(!confirm('Remove every manual adjustment? The numbers go back to what the calendar, attendance and uploads give.')) return;
+    cfgx().manualAdjustments = [];
+    await saveProjectConfig('Manual adjustments removed.');
+    try{ trkAddLog('numbers', 'All manual adjustments removed.'); }catch(e){}
+    renderTracking();
+  });
+}
+function applyDelta(dim, value, field, desired, current, prog, date, attrs){
+  var list = cfgx().manualAdjustments, key = [dim, value, prog].join('|');
+  var e = list.find(function(x){ return x.key === key; });
+  if(!e){ e = { key: key, prog: prog, date: date, dim: dim, value: value, attrs: attrs || {}, f: {} }; list.push(e); }
+  e.f[field] = (e.f[field] || 0) + (desired - current);
+  if(!e.f[field]) delete e.f[field];
+  e.date = date; e.by = (typeof adminName !== 'undefined' && adminName) || 'Admin'; e.at = new Date().toISOString();
+  if(!Object.keys(e.f).length) list.splice(list.indexOf(e), 1);
+}
+async function saveAll(el, btn){
+  var c = cfgx(), prog = (el.querySelector('#manProg') || {}).value || manProg || PROGRAMS[0].key;
+  var date = (el.querySelector('#manDate') || {}).value || fmtDate(new Date()), who = (typeof adminName !== 'undefined' && adminName) || 'Admin', now = new Date().toISOString();
+  var changes = [], hist = Array.isArray(c.targetHistory) ? c.targetHistory : (c.targetHistory = []);
+  btn.disabled = true;
+  el.querySelectorAll('tr[data-dim]').forEach(function(tr){
+    var n = tr.querySelector('.man-n');
+    if(n && n.value !== n.dataset.orig){
+      var v = parseInt(n.value, 10);
+      if(!isNaN(v) && v >= 0){
+        applyDelta(tr.dataset.dim, tr.dataset.val, n.dataset.field, v, parseInt(n.dataset.cur, 10) || 0, tr.dataset.prog || prog, date, safe(function(){ return JSON.parse(tr.dataset.attrs || '{}'); }, {}));
+        changes.push((tr.dataset.val || n.getAttribute('aria-label')) + ': ' + n.dataset.cur + ' \u2192 ' + v);
+      }
+    }
+    var t = tr.querySelector('.man-t');
+    if(t && t.value !== t.dataset.orig){
+      var tv = Math.max(0, parseInt(t.value, 10) || 0), map = t.dataset.tmap; c[map] = c[map] || {};
+      var prev = c[map][tr.dataset.val] || 0; if(tv) c[map][tr.dataset.val] = tv; else delete c[map][tr.dataset.val];
+      hist.push({ field: map + ':' + tr.dataset.val, label: 'Target \u00B7 ' + tr.dataset.val, prev: prev, next: tv, by: who, at: now });
+      changes.push('target ' + tr.dataset.val + ': ' + prev + ' \u2192 ' + tv);
+    }
+  });
+  el.querySelectorAll('.man-pt').forEach(function(i){
+    if(i.value === i.dataset.orig) return;
+    var v = Math.max(0, parseInt(i.value, 10) || 0), p = i.dataset.prog, y = i.dataset.year;
+    c.targetsByProgramYear[p] = c.targetsByProgramYear[p] || {}; var prev = c.targetsByProgramYear[p][y] || 0; c.targetsByProgramYear[p][y] = v;
+    hist.push({ field: 'py:' + p + ':' + y, label: p + ' ' + y, prev: prev, next: v, by: who, at: now });
+    changes.push('target ' + p + ' ' + y + ': ' + prev + ' \u2192 ' + v);
+  });
+  el.querySelectorAll('.man-new').forEach(function(w){
+    var nm = w.querySelector('.man-newname').value.trim(), nv = w.querySelector('.man-newnum').value;
+    if(!nm || nv === '' || isNaN(parseInt(nv, 10))) return;
+    var attrs = {}; w.querySelectorAll('.man-newattr').forEach(function(a){ if(a.value.trim()) attrs[a.dataset.attr] = a.value.trim(); });
+    applyDelta(w.dataset.newdim, nm, 'trained', Math.max(0, parseInt(nv, 10)), 0, prog, date, attrs);
+    changes.push('added ' + nm + ': ' + nv);
+  });
+  c.manualAdjustments = JSON.parse(JSON.stringify(c.manualAdjustments));
+  if(hist.length > 500) c.targetHistory = hist.slice(-500);
+  await saveProjectConfig('Saved. Every Project Tracking screen now follows these numbers.');
+  try{ trkAddLog('numbers', 'Numbers edited by hand (' + TITLES[trackState.page] + '): ' + changes.join('; ') + '.'); }catch(e){}
+  renderTracking();
+}
+var _rt18 = renderTracking;
+renderTracking = function(){
+  var r = _rt18.apply(this, arguments);
+  try{ addPanel(); }catch(e){ console.warn('Edit numbers panel', e); }
+  return r;
+};
+try{ console.info('UDAAN add-on patch 18 (2026-10-28) loaded'); }catch(e){}
+})();
+</script>
+
+<style id="udaan-addon17-css">
+  /* Project Tracking sidebar: scrolls on its own, always reaches the last option */
+  .pt-side{ top:calc(var(--bar-h,0px) + 24px); max-height:calc(100vh - var(--bar-h,0px) - 40px); min-height:0; overflow-y:auto; overflow-x:hidden;
+    overscroll-behavior:contain; -webkit-overflow-scrolling:touch; scrollbar-width:thin; }
+  .pt-nav{ padding-bottom:10px; }
+  .pt-scroll{ overscroll-behavior-x:contain; }
+  @media(max-width:900px){
+    .pt-side,.pt-side.collapsed{ max-height:none; overflow:visible; }
+    .pt-nav{ overflow-x:auto; }
+  }
+</style>
+<script>
+/* UDAAN add-on patch 17 (2026-10-28)
+   1. Project Tracking is no longer rebuilt every time live data arrives unless something really changed.
+      Every redraw keeps the sidebar scroll, the page scroll, sideways scroll of tables, typed values and
+      the cursor, so the menu, "Edit numbers", the charts and the attendance sign-in boxes stay put.
+   2. Any number saved by an admin refreshes the Milestone monitor (list), Master and Project Tracking.
+   3. The calendar drops expired Available / Cancelled dates after midnight without a reload. */
+(function(){
+"use strict";
+if(typeof renderTracking !== 'function' || typeof renderTrackingIfVisible !== 'function') return;
+
+function trackBox(){ return document.getElementById('trackTab'); }
+function safe(fn, dflt){ try{ return fn(); }catch(e){ return dflt; } }
+function clsOf(el){ var c = el.className; if(c && typeof c === 'object') c = c.baseVal; return String(c || '').trim().split(/\s+/).slice(0, 3).join('.'); }
+
+/* ---------- remember / restore the on-screen state ---------- */
+function scrollKey(el, counts){
+  var base = el.tagName + '.' + clsOf(el) + '#' + (el.id || '');
+  counts[base] = (counts[base] || 0) + 1;
+  return base + '@' + counts[base];
+}
+function ctrlBase(el){
+  if(el.id) return 'id:' + el.id;
+  var row = el.closest ? el.closest('tr[data-id],tr[data-row],tr[data-en-row],[data-id]') : null;
+  var rk = row ? JSON.stringify(row.dataset || {}) : '';
+  return 'c:' + el.tagName + '.' + (el.type || '') + '.' + clsOf(el) + '|' + (el.getAttribute('data-field') || '') + '|' + rk;
+}
+function capture(){
+  var b = trackBox(); if(!b || !b.querySelector('.pt-main')) return null;
+  var st = { page: trackState.page, y: window.pageYOffset, x: window.pageXOffset, side: 0, nav: 0, scroll: {}, ctrls: {}, focus: null };
+  var side = b.querySelector('.pt-side'), nav = b.querySelector('.pt-nav');
+  if(side) st.side = side.scrollTop;
+  if(nav) st.nav = nav.scrollLeft;
+  var counts = {};
+  b.querySelectorAll('*').forEach(function(el){
+    var k = scrollKey(el, counts);
+    if(el.scrollTop || el.scrollLeft) st.scroll[k] = [el.scrollLeft, el.scrollTop];
+  });
+  var act = document.activeElement, cc = {};
+  b.querySelectorAll('input,select,textarea').forEach(function(el){
+    var t = String(el.type || '').toLowerCase();
+    if(t === 'file' || t === 'button' || t === 'submit' || t === 'reset' || t === 'hidden') return;
+    var base = ctrlBase(el); cc[base] = (cc[base] || 0) + 1; var key = base + '@' + cc[base];
+    var modified;
+    if(t === 'checkbox' || t === 'radio') modified = el.checked !== el.defaultChecked;
+    else if(el.tagName === 'SELECT'){ var o = el.options[el.selectedIndex]; modified = !!o && !o.defaultSelected; }
+    else modified = el.value !== el.defaultValue;
+    if(modified) st.ctrls[key] = { tag: el.tagName, type: t, value: el.value, checked: el.checked };
+    if(el === act){ st.focus = { key: key, s: safe(function(){ return el.selectionStart; }, null), e: safe(function(){ return el.selectionEnd; }, null) }; }
+  });
+  return st;
+}
+function restore(st, background){
+  var b = trackBox(); if(!b || !st) return;
+  var side = b.querySelector('.pt-side'), nav = b.querySelector('.pt-nav');
+  if(side) side.scrollTop = st.side;
+  if(nav) nav.scrollLeft = st.nav;
+  var same = (st.page === trackState.page);
+  if(!same){
+    /* moved to another page: keep the menu where it was, but bring the chosen option into view */
+    var act = b.querySelector('.pt-nav-item.active');
+    if(act && side && side.scrollHeight > side.clientHeight){
+      var ar = act.getBoundingClientRect(), sr = side.getBoundingClientRect();
+      if(ar.top < sr.top + 4) side.scrollTop -= (sr.top - ar.top) + 10; else if(ar.bottom > sr.bottom - 4) side.scrollTop += (ar.bottom - sr.bottom) + 10;
+    }
+    return;
+  }
+  var counts = {};
+  b.querySelectorAll('*').forEach(function(el){
+    var k = scrollKey(el, counts), v = st.scroll[k];
+    if(v){ if(el.scrollLeft !== v[0]) el.scrollLeft = v[0]; if(el.scrollTop !== v[1]) el.scrollTop = v[1]; }
+  });
+  var cc = {}, focusEl = null;
+  b.querySelectorAll('input,select,textarea').forEach(function(el){
+    var t = String(el.type || '').toLowerCase();
+    if(t === 'file' || t === 'button' || t === 'submit' || t === 'reset' || t === 'hidden') return;
+    var base = ctrlBase(el); cc[base] = (cc[base] || 0) + 1; var key = base + '@' + cc[base];
+    var sv = st.ctrls[key];
+    if(sv && sv.tag === el.tagName && sv.type === t && (background || el.tagName !== 'SELECT')){
+      var changed = false;
+      if(t === 'checkbox' || t === 'radio'){ if(el.checked !== sv.checked){ el.checked = sv.checked; changed = true; } }
+      else if(el.value !== sv.value){ el.value = sv.value; changed = (el.value === sv.value); }
+      if(changed) safe(function(){ el.dispatchEvent(new Event('input', { bubbles: true })); });
+    }
+    if(st.focus && st.focus.key === key) focusEl = el;
+  });
+  if(focusEl && document.activeElement !== focusEl){
+    safe(function(){ focusEl.focus({ preventScroll: true }); });
+    safe(function(){ if(st.focus.s != null) focusEl.setSelectionRange(st.focus.s, st.focus.e); });
+  }
+  if(Math.abs(window.pageYOffset - st.y) > 1 || Math.abs(window.pageXOffset - st.x) > 1) window.scrollTo(st.x, st.y);
+}
+
+/* ---------- the outermost renderTracking: draw, then put everything back ---------- */
+var _rt17 = renderTracking, depth = 0, lastSig = null, bgCall = false;
+renderTracking = function(){
+  if(depth > 0) return _rt17.apply(this, arguments);              // a redraw asked for from inside a redraw
+  var st = safe(capture, null), r, bg = bgCall; bgCall = false;
+  depth++;
+  try{ r = _rt17.apply(this, arguments); }
+  finally{ depth--; }
+  /* the switches strip is cut off by the Edit numbers page; put it back */
+  safe(function(){
+    var main = document.querySelector('#trackTab .pt-main');
+    if(main && typeof isAdmin === 'function' && isAdmin() && trackState.page === 'editnums' && !main.querySelector('.src-strip') && typeof srcStripHtml === 'function'){
+      var t = main.querySelector('.pt-page-title');
+      if(t){ t.insertAdjacentHTML('afterend', srcStripHtml()); if(typeof srcWire === 'function') srcWire(main); }
+    }
+  });
+  if(st){
+    safe(function(){ restore(st, bg); });
+    requestAnimationFrame(function(){ safe(function(){ var b = trackBox(); var sd = b && b.querySelector('.pt-side'); if(sd && st.page === trackState.page && Math.abs(sd.scrollTop - st.side) > 1) sd.scrollTop = st.side; }); });
+  }
+  lastSig = computeSig();
+  return r;
+};
+
+/* ---------- live updates: redraw only when something changed and nobody is in the middle of something ---------- */
+function computeSig(){
+  var evs = safe(function(){
+    return PROGRAMS.map(function(p){ return JSON.stringify(evsForProgram(p.key) || [], function(k, v){ return k === 'history' ? undefined : v; }); }).join('~');
+  }, String(Math.random()));
+  var o = [
+    safe(function(){ return JSON.stringify(trackState); }, ''),
+    safe(function(){ return JSON.stringify(buildUnits()); }, String(Math.random())),
+    evs,
+    safe(function(){ return JSON.stringify(projectConfig); }, ''),
+    safe(function(){ return JSON.stringify(trkConfig); }, ''),
+    safe(function(){ return [attState.user && attState.user.email, attState.loaded, attState.error, attState.busy, attState.rows.length].join('|'); }, ''),
+    safe(function(){ return [srcBusy, typeof calSyncBusy !== 'undefined' ? calSyncBusy : '', trkFsBlocked, trkApplying].join('|'); }, ''),
+    safe(function(){ return trkImports.map(function(i){ return i.importId + ':' + i.rows.length; }).join(',') + '#' + trkFormRows.length + '#' + [trkForm.at, trkForm.error, trkForm.loading, trkForm.okThisSession].join('|'); }, ''),
+    safe(function(){ return trkLog.length + ':' + (trkLog[0] && trkLog[0].id); }, ''),
+    safe(function(){ return trkReports.length + ':' + trkReports.map(function(r){ return r.updatedAt; }).join(','); }, ''),
+    safe(function(){ return trkQueue.length + ':' + trkQueueBusy + ':' + JSON.stringify(trkQueueLast); }, ''),
+    document.documentElement.getAttribute('data-theme') || '',
+    new Date().toDateString()
+  ];
+  return o.join('\u0001');
+}
+var lastPointer = 0;
+document.addEventListener('pointerdown', function(e){ if(e.target && e.target.closest && e.target.closest('#trackTab')) lastPointer = Date.now(); }, true);
+function userBusy(){
+  var t = trackBox(); if(!t) return false;
+  if(Date.now() - lastPointer < 800) return true;                          // a click is still landing
+  var a = document.activeElement;
+  if(a && t.contains(a) && /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName)) return true;   // typing or choosing
+  if(t.querySelector('.en-num.changed, .en-done:checked')) return true;   // numbers typed but not saved yet
+  if(document.body.classList.contains('cx-open')) return true;             // a chart is expanded
+  return false;
+}
+var timer = null;
+function tick(){
+  timer = null;
+  var t = trackBox();
+  if(!t || t.style.display === 'none' || typeof isAdmin !== 'function' || !isAdmin()) return;
+  if(document.hidden) return;                                              // redrawn when the tab comes back
+  if(userBusy()){ timer = setTimeout(tick, 1200); return; }
+  if(t.querySelector('.pt-main') && computeSig() === lastSig) return;       // nothing changed: leave the page alone
+  bgCall = true;
+  try{ renderTracking(); }catch(e){ console.warn('Project Tracking redraw', e); }
+  bgCall = false;
+}
+renderTrackingIfVisible = function(){ if(timer) return; timer = setTimeout(tick, 350); };
+document.addEventListener('visibilitychange', function(){ if(!document.hidden) renderTrackingIfVisible(); });
+document.addEventListener('focusout', function(){ setTimeout(renderTrackingIfVisible, 250); });
+
+/* ---------- a saved number reaches every screen ---------- */
+var pend = null;
+function afterPersist(){
+  if(pend) return;
+  pend = setTimeout(function(){
+    pend = null;
+    safe(function(){ renderList(); });
+    safe(function(){ var mt = document.getElementById('masterTab'); if(mt && mt.style.display !== 'none' && isAdmin()) renderMaster(); });
+    safe(function(){ renderTrackingIfVisible(); });
+  }, 150);
+}
+['persistEventToProgram', 'persistEvent', 'removeEvent'].forEach(function(name){
+  var f = window[name];
+  if(typeof f !== 'function') return;
+  window[name] = async function(){ var r = await f.apply(this, arguments); afterPersist(); return r; };
+});
+
+/* ---------- expired Available / Cancelled dates disappear at midnight too ---------- */
+var day0 = safe(function(){ return fmtDate(new Date()); }, '');
+setInterval(function(){
+  var d = safe(function(){ return fmtDate(new Date()); }, day0);
+  if(d !== day0){ day0 = d; safe(function(){ renderAll(); }); }
+}, 60000);
+
+try{ console.info('UDAAN add-on patch 17 (2026-10-28) loaded'); }catch(e){}
+})();
+</script>
+
 </body>
 </html>
